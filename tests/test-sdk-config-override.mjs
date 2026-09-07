@@ -8,7 +8,7 @@ const NATIVE_CAP_MODE = '1080p-hevc-native-cap';
 const PLAYREADY_MODE = '1080p-hevc-sdk-playready';
 const UHD_PLAYREADY_MODE = '4k-hdr10-sdk-playready';
 const SDK_VERSION = '26.10.0-jasmine';
-const SCRIPT_VERSION = '0.4.0';
+const SCRIPT_VERSION = '0.5.0';
 const TICKET_KEY = `ioridev.disneyplus4k.once.v${SCRIPT_VERSION}`;
 const OLD_MODES = [
   '1080p-hevc-hw-persistent',

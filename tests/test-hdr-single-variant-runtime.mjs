@@ -7,7 +7,7 @@ import vm from "node:vm";
 // native fetch/XHR, SDK, EME, and session shims used by that test, without a
 // browser, network, or real CDM.
 const source = fs.readFileSync(new URL("../extension/DisneyPlus-Edge-Enhanced.user.js", import.meta.url), "utf8");
-const VERSION = "0.4.0";
+const VERSION = "0.5.0";
 const MODE = "4k-hdr10-single-pq";
 const SDK_VERSION = "26.10.0-jasmine";
 const DOCUMENT_URL = "https://www.disneyplus.com/ja-jp/play/hdr-single-variant-runtime-test";

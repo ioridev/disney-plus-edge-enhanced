@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Disney+ Edge Enhanced",
-  "version": "0.4.0",
-  "description": "アイコンでDisney+のフルHD要求をON/OFF。右クリックメニューから診断を表示。4K未達・長時間再生は検証中。",
+  "version": "0.5.0",
+  "description": "Disney+のフルHD要求をON/OFF。右クリックからIntel向け4Kと診断を選択。Intel内蔵GPUで約5分の4K再生を確認。環境依存。",
   "minimum_chrome_version": "111",
   "permissions": ["activeTab", "scripting", "contextMenus"],
   "action": {

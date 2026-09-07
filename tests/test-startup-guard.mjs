@@ -71,6 +71,7 @@ for (const mode of ['fullhd', '4k-sdr', '1080p', 'original']) {
   assert.equal(boot(local, session).mode, mode);
 }
 for (const patch of [
+  {version:'0.4.0'},
   {version:'0.3.16'},
   {version:'0.3.12'},
   {version:'0.3.0'}, {version:'0.3.2'}, {version:'0.3.3'}, {version:'0.3.4'}, {version:'0.3.5'}, {version:'0.3.6'}, {version:'0.3.7'}, {version:'0.3.8'}, {version:'0.3.9'}, {version:'0.3.10'}, {version:'0.3.11'}, {mode:'original'}, {mode:'unknown'}, {mode:'constructor'},
@@ -79,7 +80,7 @@ for (const patch of [
   {documentUrl:`${path}?other=1`}, {documentUrl:`${path}#other`},
 ]) {
   const local = makeStorage([[api.STORAGE_KEY, 'original']]);
-  const session = makeStorage([[api.TEST_TICKET_KEY, JSON.stringify({version:'0.4.0', mode:risky[0], documentUrl:path, createdAt:now, ...patch})]]);
+  const session = makeStorage([[api.TEST_TICKET_KEY, JSON.stringify({version:'0.5.0', mode:risky[0], documentUrl:path, createdAt:now, ...patch})]]);
   assert.equal(boot(local, session).mode, 'original', JSON.stringify(patch));
   assert.equal(session.getItem(api.TEST_TICKET_KEY), null);
 }
@@ -136,7 +137,7 @@ assert.equal(api.checkpointPhase('鍵状態 #1', '{"status-pending":1}'), 'keys-
 assert.equal(api.checkpointPhase('鍵状態 #1', '{"usable":1}'), 'keys-usable');
 assert.equal(api.checkpointPhase('unknown https://example.test?token=secret', 'secret'), null);
 const filtered = api.readCheckpoint(JSON.stringify({
-  version:'0.4.0', mode:risky[0], url:'secret', license:'secret',
+  version:'0.5.0', mode:risky[0], url:'secret', license:'secret',
   steps:[{time:now, phase:'update-start', secret:'secret'}, {time:1e100, phase:'update-ok'}, {time:now, phase:'secret'}],
 }));
 assert.equal(filtered.steps.length, 1);

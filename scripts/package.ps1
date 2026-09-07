@@ -12,7 +12,7 @@ try {
     $zipPath = Join-Path $distPath "disney-plus-edge-enhanced-v$packageVersion.zip"
     if (Test-Path -LiteralPath $zipPath) { throw "Archive already exists: $zipPath" }
     # Explicit allowlist: never include browser profiles, raw traces, or dumps.
-    $releaseFiles = @('extension/manifest.json', 'extension/DisneyPlus-Edge-Enhanced.user.js', 'extension/background.mjs', 'extension/toolbar.mjs', 'extension/bridge.js', 'README.md', 'LICENSE', 'PRIVACY.md', 'NOTICE.md', 'docs/diagnostics.md', 'docs/related-issues.md')
+    $releaseFiles = @('extension/manifest.json', 'extension/DisneyPlus-Edge-Enhanced.user.js', 'extension/background.mjs', 'extension/toolbar.mjs', 'extension/bridge.js', 'README.md', 'LICENSE', 'PRIVACY.md', 'NOTICE.md', 'docs/diagnostics.md', 'docs/related-issues.md', 'docs/intel-4k.md')
     Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $releaseArchive = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create)

@@ -14,14 +14,20 @@ export function applyPageCommand(command) {
     if (url.origin !== 'https://www.disneyplus.com' || url.username || url.password) return { ok: false };
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, '__DisneyPlusEdgeEnhancedToolbar');
     const control = descriptor?.value;
+    if (command === 'start-intel-4k') {
+      // No fallback to a raw ticket: the new page helper must check Intel both
+      // here and after reload. An older installed helper needs an explicit update.
+      if (typeof control?.prepareIntel4k !== 'function') return { ok: false, reason: 'reload-required' };
+      return control.prepareIntel4k();
+    }
     if (command === 'toggle-fullhd') {
       if (typeof control?.prepareToggle === 'function') return control.prepareToggle();
       // An extension installed/updated on an already-open page starts on the
       // next reload. Do not inject another copy into an old playback session.
       const key = 'ioridev.disneyplus4k.mode.v1';
       const mode = localStorage.getItem(key) === 'fullhd' ? 'original' : 'fullhd';
-      sessionStorage.removeItem('ioridev.disneyplus4k.once.v0.4.0');
-      if (sessionStorage.getItem('ioridev.disneyplus4k.once.v0.4.0') !== null) return { ok: false };
+      sessionStorage.removeItem('ioridev.disneyplus4k.once.v0.5.0');
+      if (sessionStorage.getItem('ioridev.disneyplus4k.once.v0.5.0') !== null) return { ok: false };
       localStorage.setItem(key, mode);
       return { ok: localStorage.getItem(key) === mode, reload: true, mode };
     }
@@ -39,7 +45,10 @@ export function applyPageCommand(command) {
 }
 
 export function badgeState(report) {
+  if (report?.reason === 'intel-gpu-required') return { text: '!', color: '#946200', title: 'Intel GPUを確認できず4Kは開始していません。デバッグUIを確認してください。' };
+  if (report?.reason === 'reload-required') return { text: '!', color: '#946200', title: '4Kの開始には拡張とDisney+ページを再読み込みしてください。' };
   if (report?.failed === true) return { text: '!', color: '#b42318', title: '再生を中止しました。右クリックからデバッグUIを確認してください。' };
+  if (report?.mode === '4k-hdr10-sdk-playready') return { text: '4K', color: '#1769e0', title: '4K HDR10要求 ON — クリックでOFF（このページのみ・実際の画質やHDR表示とは別）' };
   if (report?.mode === 'fullhd') return { text: 'HD', color: '#1769e0', title: 'フルHD要求 ON — クリックでOFF（実際の再生画質とは別）' };
   if (report?.mode && report.mode !== 'original') return { text: 'DBG', color: '#946200', title: 'デバッグモード — クリックで通常のフルHD要求に切り替え' };
   return { text: 'OFF', color: '#64748b', title: 'フルHD要求 OFF — クリックでON' };
@@ -48,6 +57,7 @@ export function badgeState(report) {
 export function installToolbar(api) {
   const busy = new Set();
   const menuId = 'disney-plus-enhanced-debug';
+  const intel4kMenuId = 'disney-plus-enhanced-intel-4k';
   async function paint(tabId, report) {
     const view = badgeState(report);
     await Promise.all([
@@ -66,7 +76,7 @@ export function installToolbar(api) {
       });
       const result = results.find((item) => item.frameId === 0)?.result;
       if (result?.ok !== true) {
-        await paint(tab.id, { failed: true });
+        await paint(tab.id, { failed: true, reason: result?.reason });
         return;
       }
       if (result.mode) await paint(tab.id, result);
@@ -84,11 +94,16 @@ export function installToolbar(api) {
   api.action.onClicked.addListener((tab) => { void handleCommand(tab, 'toggle-fullhd'); });
   api.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === menuId) void handleCommand(tab, 'toggle-debug');
+    if (info.menuItemId === intel4kMenuId) void handleCommand(tab, 'start-intel-4k');
   });
   api.runtime.onInstalled.addListener(() => {
     void api.contextMenus.removeAll().then(() => {
       api.contextMenus.create({
         id: menuId, title: 'デバッグUIを表示／非表示', contexts: ['action'],
+        documentUrlPatterns: ['https://www.disneyplus.com/*'],
+      });
+      api.contextMenus.create({
+        id: intel4kMenuId, title: '4Kを開始（Intel GPU向け・このページのみ）', contexts: ['action'],
         documentUrlPatterns: ['https://www.disneyplus.com/*'],
       });
     }).catch(() => {});

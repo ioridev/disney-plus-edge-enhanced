@@ -9,7 +9,7 @@ const SDK_MODE = process.argv[2] ?? MODE_HDR10;
 assert.ok([MODE_HDR10, MODE_SDR].includes(SDK_MODE),
   `usage: node tests/test-sdk-resolution-policy.mjs <${MODE_HDR10}|${MODE_SDR}>`);
 const SDK_VERSION = '26.10.0-jasmine';
-const SCRIPT_VERSION = '0.4.0';
+const SCRIPT_VERSION = '0.5.0';
 const TICKET_KEY = `ioridev.disneyplus4k.once.v${SCRIPT_VERSION}`;
 const DOCUMENT_URL = 'https://www.disneyplus.com/ja-jp/play/sdk-resolution-policy-test';
 const PLAYBACK_SCENARIO = SDK_MODE === MODE_HDR10 ? 'tv-drm-ctr-h265-hdr10-atmos' : 'tv-drm-ctr-h265-atmos';
@@ -716,4 +716,33 @@ for (const sessionKind of ['accessor', 'data']) {
     'UHD environment check does not issue a second native EME capability query');
 }
 
-console.log('SDK resolution policy: COW/descriptor validation, exact UMD capture, constructor/native contracts, fail-closed replacement/retirement guards, and UHD environment-query suppression passed');
+for (const vendor of ['Intel', 'NVIDIA', 'AMD', 'unknown']) {
+  const runtime = createRuntime();
+  runtime.context.document.createElement = () => ({getContext: () => ({
+    getExtension: (name) => name === 'WEBGL_debug_renderer_info'
+      ? {UNMASKED_VENDOR_WEBGL: 1, UNMASKED_RENDERER_WEBGL: 2}
+      : {loseContext() {}},
+    getParameter: () => vendor,
+  })});
+  const outcome = runtime.context.__DisneyPlusEdgeEnhancedToolbar.prepareIntel4k();
+  assert.equal(outcome.ok, vendor === 'Intel');
+  if (vendor === 'Intel') {
+    const ticket = JSON.parse(runtime.sessionStorage.getItem(TICKET_KEY));
+    assert.equal(ticket.mode, MODE_HDR10, 'the menu uses the exact successful mode, not the 30s single-variant experiment');
+    assert.equal(ticket.requireIntelGpu, true);
+    assert.equal(runtime.localStorage.getItem('ioridev.disneyplus4k.mode.v1'), 'original');
+    assert.equal(runtime.context.__DisneyPlusEdgeEnhancedToolbar.prepareIntel4k().ok, false, 'no double arming');
+  } else {
+    assert.equal(outcome.reason, 'intel-gpu-required');
+    assert.equal(runtime.sessionStorage.getItem(TICKET_KEY), null);
+    assert.equal(runtime.context.__DisneyPlusEdgeEnhancedToolbar.getState().mode, SDK_MODE, 'rejected selection does not change the current playback mode');
+  }
+  assert.equal(runtimeJson(runtime, 'nativeEmeCalls.length'), 0, 'selecting the menu does not perform a license/CDM probe');
+}
+if (SDK_MODE === MODE_HDR10) {
+  const runtime = createRuntime();
+  const outcome = runtime.context.__DisneyPlusEdgeEnhancedToolbar.prepareToggle();
+  assert.equal(outcome.mode, 'original', 'left-click turns a 4K session OFF rather than starting full-HD immediately');
+}
+
+console.log('SDK resolution policy: COW/descriptor validation, exact UMD capture, constructor/native contracts, fail-closed replacement/retirement guards, Intel-menu mode identity, and UHD environment-query suppression passed');

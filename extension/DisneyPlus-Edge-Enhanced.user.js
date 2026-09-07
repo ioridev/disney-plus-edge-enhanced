@@ -5,7 +5,7 @@
 // @homepageURL  https://github.com/ioridev/disney-plus-edge-enhanced
 // @supportURL   https://github.com/ioridev/disney-plus-edge-enhanced/issues
 // @license      MIT
-// @version      0.4.0
+// @version      0.5.0
 // @description  Full-HD request mode and optional playback diagnostics for Disney+ on Windows Edge. Alt+Shift+4 opens the panel. Does not bypass DRM.
 // @description:ja Disney+のフルHD要求モードと任意表示の再生診断。Alt+Shift+4でパネルを開閉します。DRMは回避しません。
 // @match        https://www.disneyplus.com/*
@@ -18,13 +18,14 @@
 (() => {
   "use strict";
 
-  const VERSION = "0.4.0";
+  const VERSION = "0.5.0";
   const STORAGE_KEY = "ioridev.disneyplus4k.mode.v1";
-  const TEST_TICKET_KEY = "ioridev.disneyplus4k.once.v0.4.0";
+  const TEST_TICKET_KEY = "ioridev.disneyplus4k.once.v0.5.0";
   const CHECKPOINT_KEY = "ioridev.disneyplus4k.checkpoint.v1";
   const DEFAULT_MODE = "original";
   const DEBUG_UI_KEY = "ioridev.disneyplus.debug-ui.v1";
   const TOOLBAR_CONTROL = "__DisneyPlusEdgeEnhancedToolbar";
+  const INTEL_4K_MODE = "4k-hdr10-sdk-playready";
   const TEST_TICKET_TTL_MS = 30000;
   const PLAYBACK_HOST = "disney.playback.edge.bamgrid.com";
   const PLAYBACK_PATH = /^\/v7\/playback\/([^/?#]+)$/;
@@ -1795,7 +1796,38 @@ function createSingleVariantNetworkAdapter({
     if (localStore.getItem(STORAGE_KEY) !== mode) throw new Error("Mode persistence failed");
   }
 
-  function consumeStartupMode(localStore, sessionStore, documentUrl, now, navigationType) {
+  function classifyGpuVendor(vendor, renderer) {
+    if (typeof vendor !== "string" || typeof renderer !== "string"
+      || vendor.length > 512 || renderer.length > 512) return "unknown";
+    const description = `${vendor} ${renderer}`;
+    if (/swiftshader|llvmpipe|software|basic render|warp\b/i.test(description)) return "software";
+    const intel = /\bintel\b/i.test(description);
+    const nvidia = /\bnvidia\b|\bgeforce\b|\bquadro\b/i.test(description);
+    const amd = /\bamd\b|\bati\b|\bradeon\b|advanced micro devices/i.test(description);
+    if ([intel, nvidia, amd].filter(Boolean).length !== 1) return "unknown";
+    return intel ? "intel" : nvidia ? "nvidia" : "amd";
+  }
+
+  function detectGpuVendor(doc) {
+    let gl;
+    try {
+      const canvas = doc.createElement("canvas");
+      canvas.width = canvas.height = 1;
+      // No powerPreference: asking for a low-power adapter could report Intel
+      // even when the browser normally uses a discrete GPU. No draws or device
+      // enumeration; the hint is NOT a protected-video/physical-output probe.
+      const options = { antialias: false, depth: false, stencil: false, failIfMajorPerformanceCaveat: true };
+      gl = canvas.getContext("webgl2", options) || canvas.getContext("webgl", options);
+      const info = gl?.getExtension("WEBGL_debug_renderer_info");
+      if (!info) return "unknown";
+      return classifyGpuVendor(gl.getParameter(info.UNMASKED_VENDOR_WEBGL), gl.getParameter(info.UNMASKED_RENDERER_WEBGL));
+    } catch (_) { return "unknown"; }
+    finally {
+      try { gl?.getExtension("WEBGL_lose_context")?.loseContext(); } catch (_) { /* Best-effort release only. */ }
+    }
+  }
+
+  function consumeStartupMode(localStore, sessionStore, documentUrl, now, navigationType, gpuProbe = () => "unknown") {
     // Consume before any EME/network hook or playback can run. A crash during the
     // test cannot reuse this ticket on a later document, including session restore.
     try {
@@ -1817,6 +1849,9 @@ function createSingleVariantNetworkAdapter({
           && now >= ticket.createdAt && now - ticket.createdAt < TEST_TICKET_TTL_MS
           && localStore.getItem(STORAGE_KEY) === DEFAULT_MODE) {
           storeMode(localStore, DEFAULT_MODE);
+          if (ticket.requireIntelGpu === true && (ticket.mode !== INTEL_4K_MODE || gpuProbe() !== "intel")) {
+            return { mode: DEFAULT_MODE, showDebug: true, notice: "再読み込み後にIntel GPUを確認できないため、4Kを開始せず無変更に戻しました。" };
+          }
           return { mode: ticket.mode, notice: "今回のページのみ実験中。再読込・再起動後は無変更。次のページへ実験設定を引き継ぎません。" };
         }
         // A stale or malformed experimental ticket must never select another
@@ -1829,14 +1864,15 @@ function createSingleVariantNetworkAdapter({
     }
   }
 
-  function prepareModeReload(mode, localStore, sessionStore, documentUrl, now) {
+  function prepareModeReload(mode, localStore, sessionStore, documentUrl, now, requireIntelGpu = false) {
     if (!Object.prototype.hasOwnProperty.call(MODE_PLANS, mode)) return { reload: false, notice: "未知のモードです。" };
+    if (requireIntelGpu && mode !== INTEL_4K_MODE) return { reload: false, notice: "Intel向け4K以外のモードです。" };
     try {
       clearTestTicket(sessionStore);
       if (isExperimentalMode(mode)) {
         if (typeof documentUrl !== "string" || new URL(documentUrl).origin !== "https://www.disneyplus.com" || !Number.isFinite(now)) throw new Error("Invalid context");
         storeMode(localStore, DEFAULT_MODE);
-        const ticket = JSON.stringify({ version: VERSION, mode, documentUrl, createdAt: now });
+        const ticket = JSON.stringify({ version: VERSION, mode, documentUrl, createdAt: now, ...(requireIntelGpu ? { requireIntelGpu: true } : {}) });
         sessionStore.setItem(TEST_TICKET_KEY, ticket);
         if (sessionStore.getItem(TEST_TICKET_KEY) !== ticket) throw new Error("Ticket persistence failed");
       } else storeMode(localStore, mode);
@@ -2323,6 +2359,9 @@ function createSingleVariantNetworkAdapter({
       isExperimentalMode,
       consumeStartupMode,
       prepareModeReload,
+      classifyGpuVendor,
+      detectGpuVendor,
+      INTEL_4K_MODE,
       checkpointPhase,
       readCheckpoint,
       normalizeSessionClosedReason,
@@ -2345,10 +2384,16 @@ function createSingleVariantNetworkAdapter({
     writable: false,
   });
 
+  let gpuVendorHint = "not-checked";
+  function probeGpuVendor() {
+    gpuVendorHint = detectGpuVendor(document);
+    return gpuVendorHint;
+  }
+
   function readStartup() {
     try {
       const navigationType = globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.type;
-      return consumeStartupMode(localStorage, sessionStorage, location.href, Date.now(), navigationType);
+      return consumeStartupMode(localStorage, sessionStorage, location.href, Date.now(), navigationType, probeGpuVendor);
     } catch (_error) {
       return { mode: DEFAULT_MODE, notice: "設定領域を利用できないため、無変更で起動しました。" };
     }
@@ -2408,7 +2453,7 @@ function createSingleVariantNetworkAdapter({
     network: [],
     environment: "未チェック",
     overlay: null,
-    debugVisible: false,
+    debugVisible: startup.showDebug === true,
   };
   const accessMetadata = new WeakMap();
   const keysMetadata = new WeakMap();
@@ -3709,6 +3754,7 @@ function createSingleVariantNetworkAdapter({
       `Disney+ Edge Enhanced v${VERSION}`,
       `モード: ${plan.label}`,
       `実験ガード: ${state.guardNotice}`,
+      `GPU参考判定（WebGL・保護映像の経路確定ではない）: ${gpuVendorHint}`,
       `前回の実験段階（保存できた範囲・今回の成功証拠ではない）: ${state.previousCheckpoint ? `${state.previousCheckpoint.mode} v${state.previousCheckpoint.version}: ${state.previousCheckpoint.steps.map((step) => `${new Date(step.time).toISOString()} ${step.phase}`).join(" → ")}` : "記録なし"}`,
       `再生要求: ${state.lastRewrite} (${state.playbackRequests}回 / 解像度編集${state.bodyEdits}件)`,
       `要求本文の解像度上限: ${state.bodyResolutionStatus}`,
@@ -4002,9 +4048,24 @@ function createSingleVariantNetworkAdapter({
     value: Object.freeze({
       getState: toolbarState,
       toggleDebug: () => setDebugVisibility(!state.debugVisible),
+      prepareIntel4k: () => {
+        if (state.modeReloadPending) return { ok: false, reason: "reload-pending" };
+        if (probeGpuVendor() !== "intel") {
+          state.guardNotice = `4Kは開始していません。WebGLのGPU分類: ${gpuVendorHint}。Intelを確認できる場合だけ通常メニューから4Kを開始できます。描画GPUと保護映像のデコード・表示経路は一致するとは限りません。`;
+          setDebugVisibility(true);
+          renderOverlay();
+          return { ok: false, reason: "intel-gpu-required" };
+        }
+        const outcome = prepareModeReload(INTEL_4K_MODE, localStorage, sessionStorage, location.href, Date.now(), true);
+        state.modeReloadPending = outcome.reload;
+        state.guardNotice = outcome.notice;
+        renderOverlay();
+        return { ok: outcome.reload, reload: outcome.reload, mode: INTEL_4K_MODE };
+      },
       prepareToggle: () => {
         if (state.modeReloadPending) return { ok: false, reason: "reload-pending" };
-        const mode = getModePlan(state.mode).continuousFhd && !state.singleVariantFailed ? DEFAULT_MODE : "fullhd";
+        const enabled = getModePlan(state.mode).continuousFhd || state.mode === INTEL_4K_MODE;
+        const mode = enabled && !state.singleVariantFailed && !state.playbackBlocked ? DEFAULT_MODE : "fullhd";
         const outcome = prepareModeReload(mode, localStorage, sessionStorage, location.href, Date.now());
         state.modeReloadPending = outcome.reload;
         state.guardNotice = outcome.notice;
@@ -4015,7 +4076,7 @@ function createSingleVariantNetworkAdapter({
     configurable: false, enumerable: false, writable: false,
   });
   addEventListener("disney-plus-enhanced:request-status", () => publishToolbarState(true));
-  safelyObserve(() => { state.debugVisible = sessionStorage.getItem(DEBUG_UI_KEY) === "1"; });
+  safelyObserve(() => { state.debugVisible = state.debugVisible || sessionStorage.getItem(DEBUG_UI_KEY) === "1"; });
   if (document.documentElement) {
     mountOverlay();
   } else {

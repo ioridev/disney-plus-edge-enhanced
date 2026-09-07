@@ -30,7 +30,7 @@ const context = vm.createContext({
   },
   document:{documentElement:null, querySelectorAll:() => [{pause:() => {pauses++;}}]},
   localStorage:makeStorage([['ioridev.disneyplus4k.mode.v1','original']]),
-  sessionStorage:makeStorage([['ioridev.disneyplus4k.once.v0.4.0',JSON.stringify({version:'0.4.0',mode:testMode,documentUrl:url,createdAt:Date.now()})]]),
+  sessionStorage:makeStorage([['ioridev.disneyplus4k.once.v0.5.0',JSON.stringify({version:'0.5.0',mode:testMode,documentUrl:url,createdAt:Date.now()})]]),
   performance:{getEntriesByType:() => [{type:'reload'}]},
   location:{href:url, reload:() => {reloads++;}},
   MutationObserver:class {observe() {}},

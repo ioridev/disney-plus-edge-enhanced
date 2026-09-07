@@ -9,6 +9,8 @@ assert.equal(badgeState({mode: 'fullhd'}).text, 'HD');
 assert.equal(badgeState({mode: 'fullhd', failed: true}).text, '!');
 assert.equal(badgeState({mode: 'original'}).text, 'OFF');
 assert.equal(badgeState({mode: '4k-hdr10'}).text, 'DBG');
+assert.equal(badgeState({mode: '4k-hdr10-sdk-playready'}).text, '4K');
+assert.match(badgeState({reason: 'intel-gpu-required', failed: true}).title, /4Kは開始していません/);
 
 const storage = () => {
   const data = new Map();
@@ -24,6 +26,8 @@ const runCommand = (context, command) => vm.runInContext(`(${applyPageCommand.to
   assert.equal(runCommand(context, 'toggle-debug').reload, true, 'already-open page requires one initial reload to install helper');
   assert.equal(context.sessionStorage.getItem('ioridev.disneyplus.debug-ui.v1'), '1');
   assert.equal(runCommand(context, 'arbitrary-code').ok, false);
+  assert.equal(runCommand(context, 'start-intel-4k').reason, 'reload-required');
+  assert.equal(context.sessionStorage.getItem('ioridev.disneyplus4k.once.v0.5.0'), null, 'missing/older helpers cannot arm an unchecked 4K ticket');
   context.localStorage.setItem = () => {};
   assert.equal(runCommand(context, 'toggle-fullhd').ok, false, 'silent storage failure does not report ON');
   const foreign = makePage('https://example.test/');
@@ -36,11 +40,15 @@ const runCommand = (context, command) => vm.runInContext(`(${applyPageCommand.to
   page.__DisneyPlusEdgeEnhancedToolbar = {
     prepareToggle: () => ({ok: true, mode: 'fullhd', reload: true}),
     toggleDebug: () => { toggles++; return {mode: 'fullhd', debugVisible: true}; },
+    prepareIntel4k: () => ({ok: true, mode: '4k-hdr10-sdk-playready', reload: true}),
   };
   const result = runCommand(page, 'toggle-debug');
   assert.equal(result.ok, true);
   assert.equal(result.reload, false, 'debug does not restart playback');
   assert.equal(toggles, 1);
+  assert.equal(runCommand(page, 'start-intel-4k').mode, '4k-hdr10-sdk-playready');
+  page.__DisneyPlusEdgeEnhancedToolbar.prepareIntel4k = () => ({ok: false, reason: 'intel-gpu-required'});
+  assert.equal(runCommand(page, 'start-intel-4k').ok, false);
 }
 
 function event() { let handler; return {addListener: (value) => {handler = value;}, fire: (...args) => handler(...args)}; }
@@ -72,6 +80,8 @@ function apiFixture() {
   assert.equal(calls.injections.length, 1, 'non-Disney tabs are never injected');
   api.runtime.onInstalled.fire(); await Promise.resolve();
   assert.deepEqual(calls.menus[0].contexts, ['action']);
+  assert.deepEqual(calls.menus[1].contexts, ['action']);
+  assert.equal(calls.menus[1].id, 'disney-plus-enhanced-intel-4k');
   const sender = {id: api.runtime.id, frameId: 0, url: current.url, tab: {id: 7}};
   api.runtime.onMessage.fire({type: 'disney-plus-enhanced-status', state: {mode: 'fullhd', failed: true}}, sender);
   await Promise.resolve(); assert.equal(calls.badges.at(-1).text, '!');
@@ -100,6 +110,15 @@ function apiFixture() {
   await new Promise(setImmediate);
   assert.deepEqual(calls.injections[1].args, ['toggle-debug']);
   assert.deepEqual(calls.reloads, [7], 'debug menu does not restart active playback');
+  api.scripting.executeScript = async (args) => {
+    calls.injections.push(args);
+    return [{frameId: 0, result: {ok: false, reason: 'intel-gpu-required'}}];
+  };
+  api.contextMenus.onClicked.fire({menuItemId: 'disney-plus-enhanced-intel-4k'}, {...current});
+  await new Promise(setImmediate);
+  assert.deepEqual(calls.injections[2].args, ['start-intel-4k']);
+  assert.deepEqual(calls.reloads, [7], 'a non-Intel result cannot trigger playback/reload');
+  assert.equal(calls.badges.at(-1).text, '!');
 }
 {
   const {api, calls, current} = apiFixture();
