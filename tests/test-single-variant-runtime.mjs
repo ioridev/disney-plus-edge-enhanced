@@ -1391,6 +1391,8 @@ await runNormalMode();
   runtime.callbacks.get('pageshow').callback({persisted: true});
   assert.equal(runtime.reloads, 1, 'BFCache restore reloads the retired full-HD document');
   await assert.rejects(runtime.run("emESession.generateRequest('cenc', testInitData)"), (error) => error.name === 'AbortError');
+  assert.equal(runtime.context.localStorage.getItem('ioridev.disneyplus4k.mode.v1'), 'fullhd',
+    'late errors from a retired page cannot disarm the next page');
 }
 
 console.log('Normal full-HD: no duration cap, repeated SDK/POST/master and native key updates, fatal error disarm, page retirement and BFCache passed (mock only).');

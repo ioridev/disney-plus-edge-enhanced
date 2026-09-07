@@ -2441,8 +2441,10 @@ function createSingleVariantNetworkAdapter({
     state.singleVariantStatus = reason;
     if (singleVariantTimer !== null) clearTimeout(singleVariantTimer);
     singleVariantTimer = null;
-    if (getModePlan(state.mode).continuousFhd) {
+    if (getModePlan(state.mode).continuousFhd && !state.retiredDocument) {
       // Do not automatically re-arm a failed full-HD session on the next load.
+      // A late callback from a departed page must not clear the preference
+      // that the next page is already using.
       safelyObserve(() => {
         if (localStorage.getItem(STORAGE_KEY) === "fullhd") storeMode(localStorage, DEFAULT_MODE);
       });
