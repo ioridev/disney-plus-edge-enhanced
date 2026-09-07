@@ -16,6 +16,7 @@ const boot = (local, session, time = now, pathname = path, navigationType = 'rel
 const arm = (mode, local, session) => api.prepareModeReload(mode, local, session, path, now);
 const risky = Object.keys(api.MODE_PLANS).filter(api.isExperimentalMode);
 assert.deepEqual(Object.keys(api.MODE_PLANS).sort(), [
+  'fullhd',
   '4k-hdr10-single-pq',
   '4k-hdr10-sdr-manifest-probe',
   '4k-hevc-sdr-manifest-probe',
@@ -62,7 +63,7 @@ for (const mode of risky) {
   assert.equal(boot(local, session, now + 121).mode, 'original', 'repeat/restart cannot reuse it');
   assert.equal(boot(local, makeStorage(), now + 121).mode, 'original', 'other tab cannot inherit localStorage mode');
 }
-for (const mode of ['4k-sdr', '1080p', 'original']) {
+for (const mode of ['fullhd', '4k-sdr', '1080p', 'original']) {
   const local = makeStorage();
   const session = makeStorage();
   assert.equal(arm(mode, local, session).reload, true);
@@ -70,6 +71,7 @@ for (const mode of ['4k-sdr', '1080p', 'original']) {
   assert.equal(boot(local, session).mode, mode);
 }
 for (const patch of [
+  {version:'0.3.16'},
   {version:'0.3.12'},
   {version:'0.3.0'}, {version:'0.3.2'}, {version:'0.3.3'}, {version:'0.3.4'}, {version:'0.3.5'}, {version:'0.3.6'}, {version:'0.3.7'}, {version:'0.3.8'}, {version:'0.3.9'}, {version:'0.3.10'}, {version:'0.3.11'}, {mode:'original'}, {mode:'unknown'}, {mode:'constructor'},
   {createdAt:now - 30000}, {createdAt:now - 30001}, {createdAt:now + 1}, {createdAt:null}, {createdAt:'100000'},
@@ -77,7 +79,7 @@ for (const patch of [
   {documentUrl:`${path}?other=1`}, {documentUrl:`${path}#other`},
 ]) {
   const local = makeStorage([[api.STORAGE_KEY, 'original']]);
-  const session = makeStorage([[api.TEST_TICKET_KEY, JSON.stringify({version:'0.3.16', mode:risky[0], documentUrl:path, createdAt:now, ...patch})]]);
+  const session = makeStorage([[api.TEST_TICKET_KEY, JSON.stringify({version:'0.4.0', mode:risky[0], documentUrl:path, createdAt:now, ...patch})]]);
   assert.equal(boot(local, session).mode, 'original', JSON.stringify(patch));
   assert.equal(session.getItem(api.TEST_TICKET_KEY), null);
 }
@@ -134,7 +136,7 @@ assert.equal(api.checkpointPhase('鍵状態 #1', '{"status-pending":1}'), 'keys-
 assert.equal(api.checkpointPhase('鍵状態 #1', '{"usable":1}'), 'keys-usable');
 assert.equal(api.checkpointPhase('unknown https://example.test?token=secret', 'secret'), null);
 const filtered = api.readCheckpoint(JSON.stringify({
-  version:'0.3.16', mode:risky[0], url:'secret', license:'secret',
+  version:'0.4.0', mode:risky[0], url:'secret', license:'secret',
   steps:[{time:now, phase:'update-start', secret:'secret'}, {time:1e100, phase:'update-ok'}, {time:now, phase:'secret'}],
 }));
 assert.equal(filtered.steps.length, 1);

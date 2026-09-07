@@ -1,5 +1,7 @@
 /dist/
 /node_modules/
+/output/
+/.playwright-cli/
 *.log
 *.dmp
 *.etl

@@ -8,7 +8,7 @@ const NATIVE_CAP_MODE = '1080p-hevc-native-cap';
 const PLAYREADY_MODE = '1080p-hevc-sdk-playready';
 const UHD_PLAYREADY_MODE = '4k-hdr10-sdk-playready';
 const SDK_VERSION = '26.10.0-jasmine';
-const SCRIPT_VERSION = '0.3.16';
+const SCRIPT_VERSION = '0.4.0';
 const TICKET_KEY = `ioridev.disneyplus4k.once.v${SCRIPT_VERSION}`;
 const OLD_MODES = [
   '1080p-hevc-hw-persistent',
@@ -21,7 +21,7 @@ const OLD_MODES = [
   'original',
 ];
 const EXISTING_MODES = [...OLD_MODES, SDK_MODE, NATIVE_CAP_MODE, 'sdk-inspect', PLAYREADY_MODE];
-const ALL_MODES = [...EXISTING_MODES, UHD_PLAYREADY_MODE, '4k-hevc-sdk-playready', '1080p-hevc-single-sdr', '4k-hevc-sdr-manifest-probe', '4k-hdr10-sdr-manifest-probe', '4k-hdr10-single-pq'];
+const ALL_MODES = [...EXISTING_MODES, UHD_PLAYREADY_MODE, '4k-hevc-sdk-playready', '1080p-hevc-single-sdr', '4k-hevc-sdr-manifest-probe', '4k-hdr10-sdr-manifest-probe', '4k-hdr10-single-pq', 'fullhd'];
 const PLAYBACK_URL = 'https://disney.playback.edge.bamgrid.com/v7/playback/ctr-regular';
 const PLAYBACK_BODY = JSON.stringify({playback:{attributes:{resolution:{max:['1280x720']}}}});
 const DOCUMENT_URL = 'https://www.disneyplus.com/ja-jp/play/sdk-override-test';

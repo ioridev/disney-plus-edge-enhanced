@@ -1,8 +1,8 @@
 {
   "name": "disney-plus-edge-enhanced",
-  "version": "0.3.16",
+  "version": "0.4.0",
   "private": true,
-  "description": "Experimental Disney+ playback-quality diagnostics for Windows Edge. Short 1080p playback observed; 4K unverified.",
+  "description": "Disney+ full-HD request toggle and optional diagnostics for Windows Edge. Long-running playback unverified; 4K not achieved.",
   "type": "module",
   "license": "MIT",
   "repository": {

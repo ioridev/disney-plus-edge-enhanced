@@ -53,7 +53,7 @@ const makeStorage = (entries) => {
   return {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key)};
 };
 const localStore = makeStorage([['ioridev.disneyplus4k.mode.v1', 'original']]);
-const sessionStore = makeStorage([['ioridev.disneyplus4k.once.v0.3.16', JSON.stringify({version:'0.3.16', mode:testMode, documentUrl:'https://www.disneyplus.com/ja-jp/play/test', createdAt:Date.now()})]]);
+const sessionStore = makeStorage([['ioridev.disneyplus4k.once.v0.4.0', JSON.stringify({version:'0.4.0', mode:testMode, documentUrl:'https://www.disneyplus.com/ja-jp/play/test', createdAt:Date.now()})]]);
 const context = vm.createContext({
   URL, console, navigator: new Navigator(), document,
   MediaKeySystemAccess: Access, MediaKeys: Keys, MediaKeySession: Session,
@@ -65,7 +65,7 @@ const context = vm.createContext({
   addEventListener() {}, setInterval() {}, setTimeout() {},
 });
 vm.runInContext(source, context);
-assert.equal(sessionStore.getItem('ioridev.disneyplus4k.once.v0.3.16'), null, 'consume the ticket before the first EME call');
+assert.equal(sessionStore.getItem('ioridev.disneyplus4k.once.v0.4.0'), null, 'consume the ticket before the first EME call');
 assert.equal(localStore.getItem('ioridev.disneyplus4k.mode.v1'), 'original', 'never persist the test as the restart mode');
 
 const config = [{initDataTypes:['cenc'], videoCapabilities:[{contentType:'video/mp4',robustness:'2000'}]}];
@@ -97,7 +97,7 @@ assert.match(localStore.getItem('ioridev.disneyplus4k.checkpoint.v1'), /update-s
 const checkpoint = JSON.parse(localStore.getItem('ioridev.disneyplus4k.checkpoint.v1'));
 assert.deepEqual(Object.keys(checkpoint).sort(), ['mode', 'steps', 'version'], 'checkpoint has only allowlisted fields');
 assert.equal(checkpoint.mode, testMode);
-assert.equal(checkpoint.version, '0.3.16');
+assert.equal(checkpoint.version, '0.4.0');
 for (const step of checkpoint.steps) {
   assert.deepEqual(Object.keys(step).sort(), ['phase', 'time'], 'never persist license bytes or arbitrary fields');
   assert.equal(typeof step.time, 'number');

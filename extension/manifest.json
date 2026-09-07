@@ -1,10 +1,25 @@
 {
   "manifest_version": 3,
   "name": "Disney+ Edge Enhanced",
-  "version": "0.3.16",
-  "description": "Disney+の画質・PlayReady再生を検証する実験用拡張。1080p短時間再生を確認、4K未達。DRMは回避しません。",
+  "version": "0.4.0",
+  "description": "アイコンでDisney+のフルHD要求をON/OFF。右クリックメニューから診断を表示。4K未達・長時間再生は検証中。",
   "minimum_chrome_version": "111",
+  "permissions": ["activeTab", "scripting", "contextMenus"],
+  "action": {
+    "default_title": "Disney+ Edge Enhanced — クリックでフルHD ON/OFF"
+  },
+  "background": {
+    "service_worker": "background.mjs",
+    "type": "module"
+  },
   "content_scripts": [
+    {
+      "matches": ["https://www.disneyplus.com/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start",
+      "world": "ISOLATED",
+      "all_frames": false
+    },
     {
       "matches": [
         "https://www.disneyplus.com/*"

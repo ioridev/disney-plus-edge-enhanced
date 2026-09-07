@@ -5,9 +5,9 @@
 // @homepageURL  https://github.com/ioridev/disney-plus-edge-enhanced
 // @supportURL   https://github.com/ioridev/disney-plus-edge-enhanced/issues
 // @license      MIT
-// @version      0.3.16
-// @description  Requests an inferred UHD playback profile on Disney+ for Windows Edge and measures video dimensions and frame progress. Does not bypass DRM.
-// @description:ja Disney+の再生要求を推定UHDシナリオへ限定変更し、表示中video要素の寸法とフレーム進行を表示します。DRMは回避しません。
+// @version      0.4.0
+// @description  Full-HD request mode and optional playback diagnostics for Disney+ on Windows Edge. Alt+Shift+4 opens the panel. Does not bypass DRM.
+// @description:ja Disney+のフルHD要求モードと任意表示の再生診断。Alt+Shift+4でパネルを開閉します。DRMは回避しません。
 // @match        https://www.disneyplus.com/*
 // @run-at       document-start
 // @grant        none
@@ -18,11 +18,13 @@
 (() => {
   "use strict";
 
-  const VERSION = "0.3.16";
+  const VERSION = "0.4.0";
   const STORAGE_KEY = "ioridev.disneyplus4k.mode.v1";
-  const TEST_TICKET_KEY = "ioridev.disneyplus4k.once.v0.3.16";
+  const TEST_TICKET_KEY = "ioridev.disneyplus4k.once.v0.4.0";
   const CHECKPOINT_KEY = "ioridev.disneyplus4k.checkpoint.v1";
   const DEFAULT_MODE = "original";
+  const DEBUG_UI_KEY = "ioridev.disneyplus.debug-ui.v1";
+  const TOOLBAR_CONTROL = "__DisneyPlusEdgeEnhancedToolbar";
   const TEST_TICKET_TTL_MS = 30000;
   const PLAYBACK_HOST = "disney.playback.edge.bamgrid.com";
   const PLAYBACK_PATH = /^\/v7\/playback\/([^/?#]+)$/;
@@ -1419,6 +1421,15 @@ function createSingleVariantNetworkAdapter({
   // SINGLE_VARIANT_MODULES_END
 
   const MODE_PLANS = Object.freeze({
+    fullhd: Object.freeze({
+      label: "フルHD（1080p SDR・時間制限なし）",
+      scenario: "tv-drm-ctr-h265-atmos",
+      resolution: "1920x1080",
+      sdkMaxHeight: 1080,
+      sdkRecommendationFlow: true,
+      singleFhdVariant: true,
+      continuousFhd: true,
+    }),
     "4k-hdr10-single-pq": Object.freeze({
       label: "4K HDR10・HEVC/AACを1候補に固定（30秒限定）",
       scenario: "tv-drm-ctr-h265-hdr10-atmos",
@@ -1551,6 +1562,7 @@ function createSingleVariantNetworkAdapter({
 
   function isExperimentalMode(mode) {
     const plan = getModePlan(mode);
+    if (plan.continuousFhd) return false;
     return Boolean(plan.hardwarePlayReady || plan.sdkMaxHeight || plan.sdkInspectOnly || mode === "4k-hdr10");
   }
 
@@ -2396,6 +2408,7 @@ function createSingleVariantNetworkAdapter({
     network: [],
     environment: "未チェック",
     overlay: null,
+    debugVisible: false,
   };
   const accessMetadata = new WeakMap();
   const keysMetadata = new WeakMap();
@@ -2428,6 +2441,12 @@ function createSingleVariantNetworkAdapter({
     state.singleVariantStatus = reason;
     if (singleVariantTimer !== null) clearTimeout(singleVariantTimer);
     singleVariantTimer = null;
+    if (getModePlan(state.mode).continuousFhd) {
+      // Do not automatically re-arm a failed full-HD session on the next load.
+      safelyObserve(() => {
+        if (localStorage.getItem(STORAGE_KEY) === "fullhd") storeMode(localStorage, DEFAULT_MODE);
+      });
+    }
     // A fixed classification only. Never retain the manifest, URL, or native
     // error/challenge/license content. Do not close/remove native sessions.
     recordEvent("単一候補比較停止", reason);
@@ -2458,6 +2477,13 @@ function createSingleVariantNetworkAdapter({
 
   function beginSingleVariantSdk() {
     if (!singleVariantMode()) return;
+    if (getModePlan(state.mode).continuousFhd && state.singleVariantSdkStarted
+      && !state.singleVariantFailed && !state.retiredDocument) {
+      if (!isSingleVariantRuntimeIntact() || !isEmeIdentifierGuardActive()) throw singleVariantAbort("sdk-start-guard");
+      // Keep the already-installed boundary. Normal site-created sessions are
+      // not a one-shot experiment; the helper itself never creates/retries one.
+      return;
+    }
     if (state.singleVariantSdkStarted || state.singleVariantFailed || state.retiredDocument) {
       throw singleVariantAbort("sdk-start-guard");
     }
@@ -2474,7 +2500,12 @@ function createSingleVariantNetworkAdapter({
     installSingleVariantNetwork();
     if (!isSingleVariantRuntimeIntact()) throw singleVariantAbort("sdk-start-guard");
     state.singleVariantSdkStarted = true;
-    const hdrLimited = Boolean(getModePlan(state.mode).singleHdrVariant);
+    const plan = getModePlan(state.mode);
+    const hdrLimited = Boolean(plan.singleHdrVariant);
+    if (plan.continuousFhd) {
+      state.singleVariantStatus = "フルHD master待機（再生時間制限なし・自動再試行なし）";
+      return;
+    }
     state.singleVariantStatus = hdrLimited
       ? "master待機（30秒・generateRequest 1回・自動再試行なし）"
       : "master待機（75秒・自動再試行なし）";
@@ -2484,7 +2515,8 @@ function createSingleVariantNetworkAdapter({
   function assertSingleVariantPlayback(rewrite, bodyResult) {
     if (!singleVariantMode()) return;
     if (!isSingleVariantRuntimeIntact() || !state.singleVariantSdkStarted
-      || state.singleVariantPlaybackSent || !rewrite.eligible || !bodyResult?.resolutionMatched) {
+      || (!getModePlan(state.mode).continuousFhd && state.singleVariantPlaybackSent)
+      || !rewrite.eligible || !bodyResult?.resolutionMatched) {
       throw singleVariantAbort("playback-post-guard");
     }
     state.singleVariantPlaybackSent = true;
@@ -2528,7 +2560,7 @@ function createSingleVariantNetworkAdapter({
           state.singleVariantSourceCount = selected.variantCount;
           state.singleVariantCandidateCount = selected.candidateCount;
           state.singleVariantStatus = selected.reason;
-          if (state.singleVariantMasters !== 0
+          if ((!plan.continuousFhd && state.singleVariantMasters !== 0)
             || !["selected-compatible-variant", "already-single-compatible"].includes(selected.reason)) {
             return { kind: "reject" };
           }
@@ -2537,7 +2569,8 @@ function createSingleVariantNetworkAdapter({
         },
         onDecision: ({ kind, channel }) => {
           if (kind !== "master-rewritten" && kind !== "master-unchanged") return;
-          if (state.singleVariantFailed || state.retiredDocument || state.singleVariantMasters !== 0) {
+          if (state.singleVariantFailed || state.retiredDocument
+            || (!getModePlan(state.mode).continuousFhd && state.singleVariantMasters !== 0)) {
             stopSingleVariant("duplicate-master");
             return;
           }
@@ -2627,7 +2660,7 @@ function createSingleVariantNetworkAdapter({
     safelyObserve(() => {
       state.playbackBlocked = true;
       state.progress4k = measure4kProgress(null, null);
-      if (getModePlan(state.mode).singleHdrVariant) stopSingleVariant("media-error");
+      if (getModePlan(state.mode).singleHdrVariant || getModePlan(state.mode).continuousFhd) stopSingleVariant("media-error");
       const value = `${stage}: ${safeError(error)}`;
       if (!state.mediaErrors.includes(value)) {
         state.mediaErrors.push(value);
@@ -3710,6 +3743,7 @@ function createSingleVariantNetworkAdapter({
 
   function renderOverlay() {
     safelyObserve(renderOverlayContents);
+    publishToolbarState();
   }
 
   function renderOverlayContents() {
@@ -3774,7 +3808,10 @@ function createSingleVariantNetworkAdapter({
       elements.note.textContent += " SDKのPlayReady選択・persistentセッション生成/終了処理を一緒に有効化します。EMEは識別子だけnot-allowedに制約し、キーシステム・robustness・セッション種別はSDK指定を保持します。SDK既定とは異なる組合せであり、受付・再生は保証しません。";
     }
     if (plan.singleFhdVariant) {
-      elements.note.textContent += " 既存の1920×1080・SDR明示・HEVC/AAC候補を1本だけ残します。音声・字幕・鍵宣言・実解像度は書き換えません。候補なし/曖昧なら中止。時間経過による鍵切替は残り得ます。SDK作成/再生POST/master各1回、75秒で停止し、自動再試行しません。";
+      elements.note.textContent += " 既存の1920×1080・SDR明示・HEVC/AAC候補を1本だけ残します。音声・字幕・鍵宣言・実解像度は書き換えません。候補なし/曖昧なら中止。時間経過による鍵切替は残り得ます。";
+      elements.note.textContent += plan.continuousFhd
+        ? " フルHDの再生時間制限はありません。master再取得や正規の鍵更新を回数で打ち切りません。エラー・SDK/通信ガード違反では中止し、次回の起動はOFFに戻します。長時間の実再生は未検証です。"
+        : " SDK作成/再生POST/master各1回、75秒で停止し、自動再試行しません。";
     }
     if (plan.singleHdrVariant) {
       elements.note.textContent += " 既存の3840×2160・PQ明示・HEVC/AAC候補を1本だけ残します。レンジ・音声・字幕・鍵宣言・実解像度は書き換えません。候補なし/曖昧なら中止。SDK作成/再生POST/master/native generateRequestは各1回、SDK開始から30秒または第2鍵要求の前に停止し、自動再試行しません。初回処理でもOSフリーズの危険は残り、タイマーはOS停止を防ぐ保証ではありません。";
@@ -3789,7 +3826,7 @@ function createSingleVariantNetworkAdapter({
   }
 
   function mountOverlay() {
-    if (state.overlay || !document.documentElement) return;
+    if (state.overlay || !state.debugVisible || !document.documentElement) return;
 
     const host = document.createElement("div");
     host.id = "ioridev-disneyplus-4k-verifier";
@@ -3827,10 +3864,11 @@ function createSingleVariantNetworkAdapter({
         <div class="head">
           <span class="badge">?</span>
           <span class="title"><strong>Disney+ Edge Enhanced v${VERSION}</strong><span>寸法とフレーム進行を別表示</span></span>
-          <button class="collapse" type="button" title="Alt+Shift+4でも開閉">縮小</button>
+          <button class="collapse" type="button" title="Alt+Shift+4でも開閉">閉じる</button>
         </div>
         <div class="body">
           <select class="mode" aria-label="再生要求モード">
+            <option value="fullhd">フルHD（1080p SDR・時間制限なし）</option>
             <option value="4k-hdr10-single-pq">4K HDR10・HEVC/AACを1候補に固定（30秒限定）</option>
             <option value="1080p-hevc-single-sdr">1080p SDR・HEVC/AACを1候補に固定（75秒比較）</option>
             <option value="4k-hevc-sdr-manifest-probe">4K SDR候補の診断のみ（復号しない）</option>
@@ -3897,8 +3935,7 @@ function createSingleVariantNetworkAdapter({
     });
 
     shadow.querySelector(".collapse").addEventListener("click", () => {
-      panel.classList.toggle("collapsed");
-      shadow.querySelector(".collapse").textContent = panel.classList.contains("collapsed") ? "開く" : "縮小";
+      setDebugVisibility(false);
     });
 
     elements.mode.addEventListener("change", () => {
@@ -3936,6 +3973,47 @@ function createSingleVariantNetworkAdapter({
     renderOverlay();
   }
 
+  function toolbarState() {
+    return { version: VERSION, mode: state.mode, failed: Boolean(state.playbackBlocked || state.singleVariantFailed), debugVisible: state.debugVisible };
+  }
+
+  let lastToolbarReport = "";
+  function publishToolbarState(force = false) {
+    safelyObserve(() => {
+      const report = JSON.stringify(toolbarState());
+      if (!force && report === lastToolbarReport) return;
+      lastToolbarReport = report;
+      globalThis.dispatchEvent(new CustomEvent("disney-plus-enhanced:status", { detail: report }));
+    });
+  }
+
+  function setDebugVisibility(visible) {
+    state.debugVisible = Boolean(visible);
+    safelyObserve(() => sessionStorage.setItem(DEBUG_UI_KEY, state.debugVisible ? "1" : "0"));
+    if (state.debugVisible) mountOverlay();
+    if (state.overlay) state.overlay.host.hidden = !state.debugVisible;
+    publishToolbarState();
+    return toolbarState();
+  }
+
+  Object.defineProperty(globalThis, TOOLBAR_CONTROL, {
+    value: Object.freeze({
+      getState: toolbarState,
+      toggleDebug: () => setDebugVisibility(!state.debugVisible),
+      prepareToggle: () => {
+        if (state.modeReloadPending) return { ok: false, reason: "reload-pending" };
+        const mode = getModePlan(state.mode).continuousFhd && !state.singleVariantFailed ? DEFAULT_MODE : "fullhd";
+        const outcome = prepareModeReload(mode, localStorage, sessionStorage, location.href, Date.now());
+        state.modeReloadPending = outcome.reload;
+        state.guardNotice = outcome.notice;
+        renderOverlay();
+        return { ok: outcome.reload, reload: outcome.reload, mode };
+      },
+    }),
+    configurable: false, enumerable: false, writable: false,
+  });
+  addEventListener("disney-plus-enhanced:request-status", () => publishToolbarState(true));
+  safelyObserve(() => { state.debugVisible = sessionStorage.getItem(DEBUG_UI_KEY) === "1"; });
   if (document.documentElement) {
     mountOverlay();
   } else {
@@ -3949,14 +4027,14 @@ function createSingleVariantNetworkAdapter({
   }
 
   addEventListener("keydown", (event) => {
-    if (event.altKey && event.shiftKey && event.code === "Digit4" && state.overlay) {
-      state.overlay.panel.classList.toggle("collapsed");
+    if (event.altKey && event.shiftKey && event.code === "Digit4") {
+      setDebugVisibility(!state.debugVisible);
       event.preventDefault();
     }
   }, true);
 
   addEventListener("pagehide", () => {
-    if (!isExperimentalMode(state.mode)) return;
+    if (!isExperimentalMode(state.mode) && !getModePlan(state.mode).continuousFhd) return;
     state.retiredDocument = true;
     if (singleVariantTimer !== null) clearTimeout(singleVariantTimer);
     singleVariantTimer = null;
@@ -3970,4 +4048,5 @@ function createSingleVariantNetworkAdapter({
   }, true);
 
   setInterval(updateVideoMeasurement, 1000);
+  publishToolbarState(true);
 })();

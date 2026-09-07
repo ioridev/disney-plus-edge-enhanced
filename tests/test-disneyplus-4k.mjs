@@ -17,6 +17,7 @@ assert.ok(api, "test API should be exported");
 
 {
   const expectedModes = [
+    "fullhd",
     "4k-hdr10-single-pq",
     "4k-hdr10-sdr-manifest-probe",
     "4k-hevc-sdr-manifest-probe",
@@ -36,7 +37,7 @@ assert.ok(api, "test API should be exported");
     "original",
     "sdk-inspect",
   ];
-  assert.equal(Object.keys(api.MODE_PLANS).length, 18);
+  assert.equal(Object.keys(api.MODE_PLANS).length, 19);
   assert.deepEqual([...source.matchAll(/<option value="([^"]+)">/g)].map(match => match[1]).sort(), expectedModes.slice().sort(), 'every mode is actually selectable in the UI');
   assert.deepEqual(Object.keys(api.MODE_PLANS).sort(), expectedModes.sort(), "retain all modes plus the bounded HDR comparison");
   assert.deepEqual(JSON.parse(JSON.stringify(api.MODE_PLANS["4k-hdr10-single-pq"])), {

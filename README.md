@@ -1,11 +1,11 @@
 # Disney+ Edge Enhanced
 
-Windows版Microsoft Edgeで、Disney+の再生要求・PlayReady・映像の実寸法とフレーム進行を調べる実験用拡張機能です。Manifest V3拡張とユーザースクリプトを同梱しています。
+Windows版Microsoft Edgeで、**ツールバーのアイコンをクリックしてDisney+のフルHD要求をON/OFF**にする拡張機能です。普段はページ上にUIを出さず、右クリックメニューから詳細なデバッグUIを開けます。Manifest V3拡張とユーザースクリプトを同梱しています。
 
-**1080p SDRの約70秒の連続再生を確認。4K再生は未達です。**
+**v0.4.0の通常フルHDモードには再生時間制限がありません。長時間の実再生は未検証、4K再生は未達です。** 実機で確認済みなのは、旧v0.3.13の1080p SDR約70秒です。
 
 > [!WARNING]
-> **4K HDR / ハードウェアPlayReadyの実験では、PC全体のフリーズ・ブルースクリーンが発生しました。** 原因は未確定です。タイマーや再試行ガードではOS・GPUドライバーの停止を防げません。通常視聴用の完成品ではなく、4K/HDRモードの日常利用は推奨しません。未保存の作業がある環境で試さず、同じ条件で停止した場合は繰り返さないでください。1080pにも無事故・長時間再生の保証はありません。
+> **4K HDR / ハードウェアPlayReadyの実験では、PC全体のフリーズ・ブルースクリーンが発生しました。** 原因は未確定です。UIを通常操作向けに整理したことや、時間制限を外したことは、実機での安定性を証明しません。タイマーやガードではOS・GPUドライバーの停止を防げません。4K/HDRモードの日常利用は推奨しません。未保存の作業がある環境で試さず、同じ条件で停止した場合は繰り返さないでください。1080pにも無事故・長時間再生の保証はありません。
 
 [ダウンロード（実験版）](https://github.com/ioridev/disney-plus-edge-enhanced/releases) · [確認できたこと](docs/diagnostics.md) · [関連報告・修正情報](docs/related-issues.md) · [プライバシー](PRIVACY.md)
 
@@ -14,8 +14,8 @@ Windows版Microsoft Edgeで、Disney+の再生要求・PlayReady・映像の実�
 | 項目 | 確認状況 |
 | --- | --- |
 | 1080p SDR | 2026-09-08、v0.3.13・Edge Betaの既存プロファイルで約70秒の実再生。最終1706フレーム、drop 0 |
-| 通常視聴・作品全編 | 未確認。成功した単一候補モードはSDK開始から75秒で意図的に停止する診断モード |
-| 公開版v0.3.16 | 後続の診断・ガード更新を含むスナップショット。公開準備で実再生を再検証したものではない |
+| v0.4.0の通常フルHD | 75秒タイマー・SDK/再生POST/masterの1回制限を撤去。繰り返し要求と正規の鍵更新をモックで確認。長時間・作品全編の実再生は未確認 |
+| v0.4.0のUI | 隔離したChromiumで通常時のUI非表示、デバッグ開閉、ページ側ON/OFF操作後の再読み込みとバッジ連携を確認。Edgeのネイティブなクリック・右クリック操作は実機未確認 |
 | 4K SDR / HDR | 実フレーム進行による成功確認なし。manifestに3840×2160があっても再生成功ではない |
 | NVIDIA / 内蔵GPU / Edge Stable | この公開記録では比較未完了。全GPU・全Edgeチャンネルへの一般化はできない |
 
@@ -47,29 +47,48 @@ Chromium issue 544339013（出力色深度とPlayReadyの報告）、AMD 26.9.1�
 
 Windows HDR、出力色深度（bpc）、Hz、GPU/MUX、ドライバー、SVM/VBSは別の比較条件です。一度に変更しないでください。8 bpcにすればフリーズを回避できる、という結果は得られていません。
 
-## インストール
+## インストール・更新
 
-1. [Releases](https://github.com/ioridev/disney-plus-edge-enhanced/releases)から `disney-plus-edge-enhanced-v0.3.16.zip` をダウンロードし、保持できる場所に展開します。GitHubのソースZIPでも構いません。
+1. [Releases](https://github.com/ioridev/disney-plus-edge-enhanced/releases)から `disney-plus-edge-enhanced-v0.4.0.zip` をダウンロードし、保持できる場所に展開します。GitHubのソースZIPでも構いません。
 2. Edgeで `edge://extensions` を開き、**開発者モード**をオンにします。
 3. **展開して読み込み（Load unpacked）**から、展開先の **`extension` フォルダー**を選びます。`manifest.json` が入っているフォルダーです。
-4. Disney+のページを新しく開くか再読み込みし、右下に **Disney+ Edge Enhanced v0.3.16** が表示されることを確認します。ページ上で起動するため、ツールバーのボタンやポップアップはありません。
-5. 最初に**「無変更」**であることを確認してください。新規導入時の既定値は無変更です。旧Helperと保存キーを共有するため、以前に保存した単純な要求モードが残っていれば、無変更へ戻してください。
+4. Edgeの拡張機能メニューから **Disney+ Edge Enhanced** をツールバーに表示／ピン留めします。
+5. Disney+ページを再読み込みします。新規導入時はバッジが **OFF** で、ページ上のパネルは出ません。旧Helperの設定を引き継いで **DBG** と出た場合は、右クリックのデバッグUIで「無変更」に戻してから使ってください。
 
-同時に旧Helper、別の画質変更拡張、ユーザースクリプト版を有効にしないでください。すでに注入済みのコードは拡張をオフにしただけでは消えないので、Disney+タブも再読み込みするか閉じます。更新時は展開ファイルを更新したうえで拡張一覧の再読み込みを押し、Disney+ページも再読み込みします。
+同時に旧Helper、別の画質変更拡張、ユーザースクリプト版を有効にしないでください。すでに注入済みのコードは拡張をオフにしただけでは消えないので、Disney+タブも再読み込みするか閉じます。**更新時は拡張フォルダー全体を更新**し、拡張一覧の再読み込みを押してDisney+ページも再読み込みします。v0.4.0ではツールバー用のファイルと権限が追加されているため、本体JSだけの差し替えでは更新できません。
 
-ユーザースクリプト版は `DisneyPlus-Edge-Enhanced.user.js` です。ページ本体の実行領域への `document-start` 注入に対応する管理拡張が必要です。今回の実再生記録は展開したMV3拡張によるもので、各スクリプト管理拡張との互換性は未検証です。
+ユーザースクリプト版は `DisneyPlus-Edge-Enhanced.user.js` です。ページ本体の実行領域への `document-start` 注入に対応する管理拡張が必要です。専用のツールバーボタンはないため、`Alt+Shift+4` でデバッグUIを開いてモードを選びます。今回の実再生記録は展開したMV3拡張によるもので、各スクリプト管理拡張との互換性は未検証です。
 
-## 1080pを比較する場合
+## 普段の操作
 
-1. 上記の前提・注意事項を確認し、4K/HDRモードではなく **「1080p SDR・HEVC/AACを1候補に固定（75秒比較）」**を選びます。選択するとページが再読み込みされます。
-2. そのページで作品を1回再生します。自動再試行はしません。比較中に音声変更・シーク・別モードへの切替を重ねないでください。
-3. `1920×1080`だけでなく、時間とフレーム数の増加、エラーの有無を確認します。`edge://media-internals`の該当プレーヤーでも接続CDM・解像度・codecを確認できます。
-4. SDK開始から**75秒**で停止します。起動時間を含むため、実映像が75秒流れるという意味ではありません。時間制限による予定停止と、復号・ライセンスエラーを区別します。
-5. 比較後は「無変更」に戻すかタブを閉じます。この単一候補実験は1ページ限定で、次の再読み込み・再起動で自動再開しません。
+1. Disney+タブで拡張アイコンをクリックすると、フルHD要求を **ON** にして、そのタブだけ再読み込みします。作品の再生操作はDisney+側で行います。
+2. もう一度クリックすると **OFF（無変更）** に戻して、そのタブだけ再読み込みします。拡張自身がEdgeを再起動したり、他のタブを再読み込みしたりすることはありません。
+3. 調べたいときだけ、アイコンを右クリックして **「デバッグUIを表示／非表示」** を選びます。通常は再読み込みも再生モードの変更もしません。既存ページに新版本体が未注入の場合だけ、読み込みのため一度再読み込みします。
 
-このモードは**長時間1080p視聴を有効化する完成機能ではありません**。単一候補化しても時間経過による鍵切替は残り得ます。75秒制限を外して検証済み扱いにしないでください。
+右クリック単独でページUIを開くのではなく、Edge標準の右クリックメニューに項目を追加する方式です。`Alt+Shift+4` でも開閉でき、パネルの「閉じる」で隠せます。デバッグUIの表示状態はタブのsessionStorageに保持します。
 
-「環境チェック」のEME API受付はCDMの実使用を示しません。「接続CDM / 鍵」と実フレームを確認します。「診断をコピー」は手動操作時だけクリップボードへ書き込みます。パネルは「縮小」または `Alt+Shift+4` で開閉できます。
+| バッジ | 意味 |
+| --- | --- |
+| OFF | 再生設定は無変更 |
+| HD | 通常フルHD要求がON。**実際に1080pで再生できている証拠ではありません** |
+| DBG | デバッグUIで選んだ別の要求・診断モード |
+| ! | 操作または再生のエラー。右クリックからデバッグUIを確認 |
+
+ON/OFFはDisney+のlocalStorageに保存し、次回開くDisney+ページでも使います。同じoriginのタブ間で共有される設定ですが、既に再生中の他タブのモードを即座に切り替えるものではありません。
+
+通常フルHDは、既存の1920×1080・SDR・HEVC/AAC候補を1本選びます。**再生時間で停止せず、SDKセッション作成・再生要求・master再取得・正規の鍵更新を1回で打ち切りません。** 拡張自身が自動再生やエラー時の再試行を行うものではなく、認証・ライセンス・回線・サービス側の問題までは解消しません。
+
+候補が見つからない、SDK構造が未対応、DRM/映像エラー、通信ガードの不成立などでは停止します。通常フルHDでこの停止が起きた場合は、保存設定もOFFへ戻し、次回読み込みで自動的に同じ処理を始めないようにします。OS全体がフリーズした場合は、この処理自体が実行できないことがあります。
+
+## デバッグ・再生の確認
+
+- `1920×1080`という宣言だけでなく、動画の実寸法・時間とフレーム数の増加を確認します。`edge://media-internals`でも接続CDM・解像度・codecを確認できます。
+- 「環境チェック」のEME API受付はCDMの実使用を示しません。「接続CDM / 鍵」と実フレームを確認します。
+- 「診断をコピー」は手動操作時だけクリップボードへ書き込みます。
+- 旧 **「1080p SDR・HEVC/AACを1候補に固定（75秒比較）」** は短時間診断用として残しています。こちらはSDK開始から75秒で予定停止し、次の再読み込みで自動再開しません。普段の視聴では「フルHD（1080p SDR・時間制限なし）」を使います。
+- 4K HDR単一候補の30秒制限など、危険な比較モードの制限は変更していません。
+
+時間制限の撤去と実機での安定性は別です。作品全編、鍵切替・シーク・吹替変更、別作品やGPUでの継続再生は引き続き検証が必要です。
 
 ## 開発・テスト
 
@@ -101,6 +120,8 @@ powershell -NoProfile -File scripts/package.ps1
 
 ## English summary
 
-Experimental Windows Edge extension for inspecting Disney+ playback requests, actual video dimensions, frame progress, and PlayReady state. About 70 seconds of real 1080p SDR playback was observed with v0.3.13 on Edge Beta; v0.3.16 is the published diagnostic snapshot, not a new hardware playback validation. **4K playback is not achieved. Full-title playback is unverified.** The single-FHD comparison intentionally stops 75 seconds after SDK startup.
+Windows Edge extension with a one-click full-HD request toggle. Right-click its toolbar icon and choose the debug UI item for diagnostics; the page overlay is hidden by default. v0.4.0 adds a normal full-HD mode without the old 75-second duration or one-SDK/POST/master limits. The HD badge indicates the requested mode, not verified picture quality. Native errors still stop the mode and reset the saved preference to OFF.
 
-**Hardware PlayReady / 4K HDR tests have frozen the entire PC or caused a BSOD. Software timers cannot prevent OS/GPU hangs.** This is not a stable viewing enhancement, DRM bypass, key extractor, or downloader. Keep legitimate subscription and playback permissions. The comparison settings are PlayReady enabled, Widevine disabled, hardware acceleration enabled, HEVC available, and a full Edge restart; restore changed flags afterward. Load the `extension` directory unpacked and start in the unchanged mode. MIT licensed; no affiliation with Disney or Microsoft.
+About 70 seconds of real 1080p SDR playback was observed with v0.3.13 on Edge Beta. v0.4.0 was checked with offline mocks and an isolated Chromium UI fixture, not a new hardware playback run. **4K playback is not achieved. Long-running/full-title playback is unverified.** The separate diagnostic modes retain their 75-second FHD and 30-second HDR limits.
+
+**Hardware PlayReady / 4K HDR tests have frozen the entire PC or caused a BSOD. Software timers cannot prevent OS/GPU hangs.** This is not a DRM bypass, key extractor, or downloader. Keep legitimate subscription and playback permissions. Prerequisites used in the comparison were PlayReady enabled, Widevine disabled, hardware acceleration enabled, HEVC available, and a full Edge restart; restore changed flags afterward. Load the entire `extension` directory unpacked, pin its icon, and start in OFF. MIT licensed; no affiliation with Disney or Microsoft.

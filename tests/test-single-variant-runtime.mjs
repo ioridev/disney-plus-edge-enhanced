@@ -3,7 +3,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const source = fs.readFileSync(new URL("../extension/DisneyPlus-Edge-Enhanced.user.js", import.meta.url), "utf8");
-const VERSION = "0.3.16";
+const VERSION = "0.4.0";
 const MODE = "1080p-hevc-single-sdr";
 const PROBE_MODE = "4k-hevc-sdr-manifest-probe";
 const HDR10_PROBE_MODE = "4k-hdr10-sdr-manifest-probe";
@@ -166,8 +166,8 @@ function createRuntime({
     master,
   };
 
-  const localStorage = makeStorage([["ioridev.disneyplus4k.mode.v1", "original"]]);
-  const sessionStorage = mode === "original"
+  const localStorage = makeStorage([["ioridev.disneyplus4k.mode.v1", mode === "fullhd" ? "fullhd" : "original"]]);
+  const sessionStorage = mode === "original" || mode === "fullhd"
     ? makeStorage()
     : makeStorage([[`ioridev.disneyplus4k.once.v${VERSION}`, JSON.stringify({
       version: VERSION,
@@ -1336,4 +1336,62 @@ for (const mode of PROBE_MODES) {
 }
 await runNormalMode();
 
-console.log("single-variant runtime: normal-mode identity, v0.3.16 FHD 1080 and HEVC/HDR10 UHD SDR probe 2160 SDK config/recommendation, PlaybackSession UHD policy, one POST/SDK cap, fetch/XHR text+arraybuffer probe rejection, native EME/session arguments, and fail-closed generateRequest gates passed");
+// Normal full-HD keeps the same strict SDR selector but removes experiment
+// duration/request counters. This is mocked continuity, not real CDM playback.
+{
+  const runtime = createRuntime({mode: 'fullhd'});
+  const control = runtime.context.__DisneyPlusEdgeEnhancedToolbar;
+  assert.equal(control.getState().mode, 'fullhd');
+  assert.equal(control.getState().debugVisible, false, 'normal startup never mounts a diagnostics panel');
+  await publishAndCreate(runtime);
+  await sendPlayback(runtime);
+  await fetchMasterAndMedia(runtime);
+  await prepareSession(runtime);
+  assert.equal([...runtime.timers.values()].some(({delay}) => delay === 75000 || delay === 30000), false,
+    'normal full-HD has no experiment duration timer');
+  let pauses = 0;
+  runtime.context.document.querySelectorAll = () => [{pause: () => pauses++}];
+  runtime.run(`globalThis.Date = class extends Date { static now() { return ${Date.now()} + 7200000; } };`);
+  for (let cycle = 0; cycle < 3; cycle++) {
+    const generate = runtime.run("emESession.generateRequest('cenc', testInitData)");
+    assert.equal(generate, runtime.generatePromise, 'subsequent native key requests remain intact');
+    await generate;
+    const update = runtime.run('emESession.update(testLicense)');
+    assert.equal(update, runtime.updatePromise);
+    await update;
+    const repeatedMaster = await runtime.run(`fetch(${JSON.stringify(MASTER_URL)})`);
+    assert.equal(countVariants(await repeatedMaster.text()), 1, 'repeated masters retain strict FHD selection');
+  }
+  const secondSdk = runtime.run("new globalThis['playback-service'].PlaybackService().createPlaybackSession(sdkInput, sdkMarker)");
+  assert.equal(secondSdk, runtime.sdkPromise, 'site-created subsequent sessions are not stopped by a one-shot limit');
+  await secondSdk;
+  await runtime.run(`fetch(${JSON.stringify(PLAYBACK_URL)}, {method:'POST', body:${JSON.stringify(makePlaybackBody())}})`);
+  assert.equal(runtime.nativeFetchCalls.filter(({method}) => method === 'POST').length, 2);
+  assert.equal(runtime.sdkCalls.length, 2);
+  assert.equal(pauses, 0, 'no helper pause after mock time advancement, key updates or repeated requests');
+  assert.equal(control.getState().failed, false);
+  const nativeFailure = new DOMException('Mock license failure', 'NotSupportedError');
+  runtime.updatePromise = Promise.reject(nativeFailure);
+  await assert.rejects(runtime.run('emESession.update(testLicense)'), (error) => error === nativeFailure);
+  await Promise.resolve();
+  assert.ok(pauses > 0, 'real native errors still stop normal full-HD');
+  assert.equal(runtime.context.localStorage.getItem('ioridev.disneyplus4k.mode.v1'), 'original', 'errors disarm the next load');
+  await assert.rejects(runtime.run("emESession.generateRequest('cenc', testInitData)"), (error) => error.name === 'AbortError');
+}
+
+{
+  const runtime = createRuntime({mode: 'fullhd'});
+  await publishAndCreate(runtime);
+  await sendPlayback(runtime);
+  await fetchMasterAndMedia(runtime);
+  await prepareSession(runtime);
+  runtime.pagehide();
+  assert.equal(runtime.context.localStorage.getItem('ioridev.disneyplus4k.mode.v1'), 'fullhd',
+    'ordinary navigation preserves the full-HD preference');
+  runtime.callbacks.get('pageshow').callback({persisted: true});
+  assert.equal(runtime.reloads, 1, 'BFCache restore reloads the retired full-HD document');
+  await assert.rejects(runtime.run("emESession.generateRequest('cenc', testInitData)"), (error) => error.name === 'AbortError');
+}
+
+console.log('Normal full-HD: no duration cap, repeated SDK/POST/master and native key updates, fatal error disarm, page retirement and BFCache passed (mock only).');
+console.log("single-variant runtime: normal-mode identity, v0.4.0 FHD 1080 and HEVC/HDR10 UHD SDR probe 2160 SDK config/recommendation, PlaybackSession UHD policy, one POST/SDK cap, fetch/XHR text+arraybuffer probe rejection, native EME/session arguments, and fail-closed generateRequest gates passed");
