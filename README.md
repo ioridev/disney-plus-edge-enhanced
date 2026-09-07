@@ -7,7 +7,7 @@ Windows版Microsoft Edgeで、Disney+の再生要求・PlayReady・映像の実�
 > [!WARNING]
 > **4K HDR / ハードウェアPlayReadyの実験では、PC全体のフリーズ・ブルースクリーンが発生しました。** 原因は未確定です。タイマーや再試行ガードではOS・GPUドライバーの停止を防げません。通常視聴用の完成品ではなく、4K/HDRモードの日常利用は推奨しません。未保存の作業がある環境で試さず、同じ条件で停止した場合は繰り返さないでください。1080pにも無事故・長時間再生の保証はありません。
 
-[ダウンロード（実験版）](https://github.com/ioridev/disney-plus-edge-enhanced/releases) · [確認できたこと](docs/diagnostics.md) · [プライバシー](PRIVACY.md)
+[ダウンロード（実験版）](https://github.com/ioridev/disney-plus-edge-enhanced/releases) · [確認できたこと](docs/diagnostics.md) · [関連報告・修正情報](docs/related-issues.md) · [プライバシー](PRIVACY.md)
 
 ## 現状
 
@@ -18,6 +18,12 @@ Windows版Microsoft Edgeで、Disney+の再生要求・PlayReady・映像の実�
 | 公開版v0.3.16 | 後続の診断・ガード更新を含むスナップショット。公開準備で実再生を再検証したものではない |
 | 4K SDR / HDR | 実フレーム進行による成功確認なし。manifestに3840×2160があっても再生成功ではない |
 | NVIDIA / 内蔵GPU / Edge Stable | この公開記録では比較未完了。全GPU・全Edgeチャンネルへの一般化はできない |
+
+## 関連報告・修正情報
+
+Chromium issue 544339013（出力色深度とPlayReadyの報告）、AMD 26.9.1の公開修正一覧、Microsoft Q&AのRX 9070 XTフリーズ報告、Windows 25H2の別DRM修正を、[出典・確認範囲つきで整理しています](docs/related-issues.md)。
+
+**本拡張でのフリーズと同一原因だと確認したものではありません。** Chromiumの原典全文・最新解決状態は未取得、AMDの修正一覧に記載がないことは未修正の証明ではありません。WindowsのBlu-ray/DVD/TV向け修正も、今回のストリーミング不具合の修正とは混同しません。
 
 ## できること・しないこと
 
