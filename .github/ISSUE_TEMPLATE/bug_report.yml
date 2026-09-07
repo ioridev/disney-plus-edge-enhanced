@@ -1,0 +1,34 @@
+name: 再生・診断の不具合
+description: 機密情報を含めずに、比較条件と実フレームの結果を報告する
+body:
+  - type: markdown
+    attributes:
+      value: |
+        4K/HDRでPC停止が起きた場合、同じ条件を繰り返さないでください。
+        HAR・Cookie・認証ヘッダー・manifest全文・ライセンス本文・メモリダンプは添付しないでください。
+  - type: input
+    id: versions
+    attributes:
+      label: Windows / Edge / 拡張のバージョン
+      description: Edgeのチャンネル（Stable / Beta等）も記入してください。
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: GPU・ドライバー・表示条件
+      description: HDR、出力bpc、内蔵画面か外部画面か。不明な項目は不明で構いません。個人のホスト名は不要です。
+  - type: textarea
+    id: conditions
+    attributes:
+      label: 選択モードと前提設定
+      description: PlayReady / Widevine / アクセラレーション / HEVC / Edge再起動の確認状況。他の画質拡張との併用の有無。
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: 観測結果
+      description: 実寸法・時間とフレーム数の増加・接続CDM・エラー・予定停止の有無。診断文は機密情報がないことを確認してから貼り付けてください。
+    validations:
+      required: true

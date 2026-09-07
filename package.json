@@ -1,0 +1,18 @@
+{
+  "name": "disney-plus-edge-enhanced",
+  "version": "0.3.16",
+  "private": true,
+  "description": "Experimental Disney+ playback-quality diagnostics for Windows Edge. Short 1080p playback observed; 4K unverified.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ioridev/disney-plus-edge-enhanced.git"
+  },
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:check": "node scripts/build.mjs --check",
+    "test": "node scripts/build.mjs --check && node scripts/test.mjs"
+  }
+}

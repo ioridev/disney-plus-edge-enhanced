@@ -1,0 +1,11 @@
+/dist/
+/node_modules/
+*.log
+*.dmp
+*.etl
+*.har
+*.zip
+.env
+.env.*
+.DS_Store
+Thumbs.db
