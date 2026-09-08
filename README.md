@@ -1,3 +1,5 @@
+![Disney+ Edge Enhanced — フルHD・Intel向け4K（実験版）の非公式Edge拡張](docs/assets/readme-banner.png)
+
 # Disney+ Edge Enhanced
 
 Windows版Microsoft Edgeで、**ツールバーのアイコンをクリックしてDisney+のフルHD要求をON/OFF**にする拡張機能です。Intel GPU向けの4K選択とデバッグUIは右クリックメニューにまとめ、普段はページ上にUIを出しません。Manifest V3拡張とユーザースクリプトを同梱しています。

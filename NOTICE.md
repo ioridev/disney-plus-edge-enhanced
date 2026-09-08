@@ -2,6 +2,8 @@
 
 Disney+ Edge Enhancedの独自コードは[MIT License](LICENSE)で公開しています。Disney+ / Microsoft / GPUメーカーとの提携・承認を示すものではありません。各名称・商標はそれぞれの権利者に属します。
 
+READMEのヘッダー画像は本プロジェクト用にAI生成したイラストです。公式ロゴや作品映像ではなく、製品・サービスとの提携を示すものではありません。
+
 調査中には、次の公開資料・先行実装を参照しました。
 
 - [SpaceSaver — FHD Disney+ For Chromebooks](https://gist.github.com/SpaceSaver/5e686a1f129ef456e6a94012f59991c3): 再生要求やHLS候補を扱う先行ユーザースクリプトとして参照。コードは本リポジトリへ取り込んでいません。
