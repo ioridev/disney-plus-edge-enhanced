@@ -1,15 +1,29 @@
-![Disney+ Edge Enhanced — フルHD・Intel向け4K（実験版）の非公式Edge拡張](docs/assets/readme-banner.png)
-
 # Disney+ Edge Enhanced
+
+## GPU別の対応表
+
+Windows版Edgeでの利用目安です（2026-09-13更新）。
+
+| GPU・接続構成 | 利用する画質 | 外部モニターを使う場合 |
+| --- | --- | --- |
+| **Intel内蔵GPU**で動画処理・画面出力 | **4K HDR：動作確認済み** | Intel側につながる映像出力端子を使う |
+| **NVIDIA / AMDのdGPU**（専用GPU）で利用 | **フルHD（1080p SDR）まで** | 4K / HDRは本拡張の通常利用の案内対象外 |
+| **Intel内蔵GPU＋dGPU**のデュアルGPU機 | **モニターの接続先GPUによる** | EdgeをIntel指定にするだけでなく、**端子の接続先もIntel**か確認する |
+
+Intel Iris Xeで実測しています。全Intel世代の動作保証ではありません。dGPUの「フルHDまで」は本拡張の案内範囲であり、全機種で1080p成功を確認した意味でも、GPU自体の性能上限でもありません。出力保護の条件によってフルHDも失敗する場合があります。[検証構成と制限](docs/intel-4k.md)
+
+**外部モニターの端子選びが重要です。** 検証ノートでは、NVIDIA側の端子では再生できず、Intel側の端子へ差し替えると、同じモニターで4K・HDRオンの5分再生に成功しました。[デュアルGPU機の接続手順](#デュアルgpu機で外部モニターを使う場合)
+
+![Disney+ Edge Enhanced — フルHD・Intel向け4K（実験版）の非公式Edge拡張](docs/assets/readme-banner.png)
 
 Windows版Microsoft Edgeで、**ツールバーのアイコンをクリックしてDisney+のフルHD要求をON/OFF**にする拡張機能です。Intel GPU向けの4K選択とデバッグUIは右クリックメニューにまとめ、普段はページ上にUIを出しません。Manifest V3拡張とユーザースクリプトを同梱しています。
 
-**Intel内蔵GPUを使うノートPCの通常Edgeで、4K映像を約5分14秒継続再生できました。** 実機記録は既存v0.3.16の「4K HDR10（SDKのPlayReady選択）」によるものです。v0.5.0はそのモードをIntel向けの右クリック項目から選べるようにしました。[構成・実測・制限](docs/intel-4k.md)。
+**Intel内蔵GPUでは、内蔵画面に加え、外部モニターのHDRオン・RGB 10bit出力でも4K映像を5分以上継続再生できました。** 最新の外部HDR試験は約5分8秒・7,393フレーム進行・ドロップ0。実機記録は既存v0.3.16の「4K HDR10（SDKのPlayReady選択）」によるものです。v0.5.0はそのモードをIntel向けの右クリック項目から選べるようにしました。[構成・実測・制限](docs/intel-4k.md)。
 
 通常フルHDモードには再生時間制限がありません。Intel向け4Kも30秒停止のない既存モードを使います。ただし、全GPU・全編・HDR表示品質を保証するものではありません。
 
 > [!WARNING]
-> **AMD機の4K HDR / ハードウェアPlayReady実験では、PC全体のフリーズ・ブルースクリーンが発生しました。** 同じノートのNVIDIA直結経路でも、1080p段階で出力保護エラーがありました。Intelでの成功を他GPUに一般化しません。タイマーやGPU名の判定はOS・ドライバー停止を防ぐ仕組みではありません。未保存の作業がある環境で試さず、同じ条件で停止した場合は繰り返さないでください。
+> **AMD機の4K / HDR実験では、PC全体のフリーズ・ブルースクリーンが発生しました。1080pのHDR試験でもフリーズしています。** NVIDIA直結経路でも出力保護エラーがありました。dGPUでは通常のフルHD **SDR** モードまでを案内し、4K / HDRは勧めません。タイマーやGPU名の判定はOS・ドライバー停止を防ぐ仕組みではありません。未保存の作業がある環境で試さず、同じ条件で停止した場合は繰り返さないでください。
 
 [ダウンロード（実験版）](https://github.com/ioridev/disney-plus-edge-enhanced/releases) · [確認できたこと](docs/diagnostics.md) · [関連報告・修正情報](docs/related-issues.md) · [プライバシー](PRIVACY.md)
 
@@ -20,9 +34,11 @@ Windows版Microsoft Edgeで、**ツールバーのアイコンをクリックし
 | 1080p SDR | 2026-09-08、v0.3.13・Edge Betaの既存プロファイルで約70秒の実再生。最終1706フレーム、drop 0 |
 | v0.4.0の通常フルHD | 75秒タイマー・SDK/再生POST/masterの1回制限を撤去。繰り返し要求と正規の鍵更新をモックで確認。長時間・作品全編の実再生は未確認 |
 | v0.4.0のUI | 隔離したChromiumで通常時のUI非表示、デバッグ開閉、ページ側ON/OFF操作後の再読み込みとバッジ連携を確認。Edgeのネイティブなクリック・右クリック操作は実機未確認 |
-| Intel内蔵GPU / 通常Edgeの4K | v0.3.16、3840×2160を313.738642秒維持、7,525フレーム増加・追加drop 0。3回の初期ライセンス処理も成功 |
-| 同ノートのNVIDIA直結 | HW PlayReadyの1080p段階で出力保護エラー `0x8004CD22`。4K実復号は未試行。NVIDIA全般が非対応という意味ではない |
-| 実ディスプレイ / HDR | 成功した内蔵画面は2560×1600、通常表示モードはSDR。4Kソースの復号成功とネイティブ4K/HDR表示は別 |
+| Intel内蔵GPU / 内蔵画面の4K | 2026-09-08、v0.3.16。3840×2160を313.738642秒維持、7,525フレーム増加・追加drop 0。画面出力はSDR |
+| Intel内蔵GPU / 外部画面の4K・SDR出力 | 2026-09-12、通常Edge 153.0.4234.32・v0.3.16。3840×2160を301.028331秒維持、7,219フレーム増加・drop 0 |
+| Intel内蔵GPU / 外部画面の4K・HDR出力 | 同日、3840×2160を307.718852秒維持、7,393フレーム増加・drop 0。HDRオン・RGB 10bitを再生中にも確認 |
+| 同ノートのNVIDIA側外部出力 | 4K開始時に `0x8004CD22`。EdgeをIntel描画に指定しても、外部出力がNVIDIAのままでは `0xC0262500`。端子変更後のIntel出力では成功 |
+| 実ディスプレイ / HDR | 外部MPG 491C OLEDは5120×1440・144Hz。4Kソース再生とHDR出力は確認したが、ネイティブ4Kパネル表示やHDR輝度・色の正確さの測定ではない |
 | v0.5.0 | 実再生済みの既存4Kモードへの入口とIntel参考判定を追加。新UIでの実機再検証・作品全編は未確認 |
 
 ## 関連報告・修正情報
@@ -89,7 +105,7 @@ ON/OFFはDisney+のlocalStorageに保存し、次回開くDisney+ページでも
 
 ## Intel GPUで4Kを選ぶ
 
-1. Edgeと画面がIntel側を使う構成で、アイコンを右クリック → **「4Kを開始（Intel GPU向け・このページのみ）」** を選びます。成功したノートではG-HelperのGPUモード「標準」を使用しました。「標準」は両GPUを有効にするため、Intel専用モードと同じではありません。
+1. Edgeと画面がIntel側を使う構成で、アイコンを右クリック → **「4Kを開始（Intel GPU向け・このページのみ）」** を選びます。外部モニターは[接続先GPUも確認](#デュアルgpu機で外部モニターを使う場合)してください。内蔵画面の成功時はG-HelperのGPUモード「標準」でしたが、特定の性能モードが必須と確認したわけではありません。
 2. WebGLの参考判定がIntelの場合に、そのタブを再読み込みして **「4K HDR10（SDKのPlayReady選択）」** を開始します。GPU判定は再読み込み後にも確認します。拡張が再生ボタンを押したり、Windows/MUX/HDR設定を切り替えたりすることはありません。
 3. 720p/1080pから4Kへ上がることがあります。バッジではなく、デバッグUIの実寸法・時間とフレーム進行で確認してください。30秒停止や2回目の鍵要求で打ち切るモードではありません。
 4. アイコンをクリックするとOFFになります。4Kは保存された常時ON設定にはせず、再読み込み・再起動後は無変更に戻ります。もう一度使うときは右クリックから選び直します。通常の左クリックによるONは引き続きフルHDです。
@@ -97,6 +113,16 @@ ON/OFFはDisney+のlocalStorageに保存し、次回開くDisney+ページでも
 **メニュー項目自体は表示されますが、NVIDIA/AMD/ソフトウェア描画/判定不能の場合、その項目から4Kは開始しません。** 理由をデバッグUIに表示し、再生中の設定やタブは変更しません。更新直後に旧スクリプトが残っている場合も開始せず、拡張とDisney+タブの再読み込みが必要です。
 
 WebGLのGPU名は、保護映像を復号するGPUや物理出力先の証明ではありません。ハイブリッド機では異なる可能性があり、Intel表示でも成功保証ではなく、逆に使える構成で判定できない場合もあります。Intel製の全世代・Arc等の全製品を検証済みとは扱いません。既存のデバッグ用4Kモードはそのまま残しており、新しいIntel判定は通常メニューからの開始に適用します。
+
+## デュアルGPU機で外部モニターを使う場合
+
+**「Edgeが使うGPU」と「モニターにつながるGPU」は別です。** WindowsでEdgeをIntel優先にしても、dGPU側の映像端子につないだモニターの出力元は変わらない場合があります。
+
+1. Windowsの「設定 → システム → ディスプレイ → グラフィック」で、Edgeを **Intel内蔵GPU（省電力）** に指定し、Edgeを再起動します。
+2. 「ディスプレイの詳細設定」で、対象モニターの接続先がIntelか確認します。NVIDIA / AMDにつながっている場合は、PCの仕様を確認し、**Intel側に接続された別の映像端子**を使ってください。USB-CやHDMIという形状だけでは判断できず、対応する端子・配線は機種ごとに異なります。
+3. HDR対応モニターでHDR表示を使う場合は、WindowsのHDRをオンにしてから、拡張のIntel向け4Kモードを選びます。モード名やバッジだけでなく、実寸法とフレーム進行を確認してください。
+
+実測したROG Flow Z13 GZ301VVでは、**XG Mobile横のUSB-CはNVIDIA出力で失敗 → もう一方のThunderbolt 4端子はIntel出力で成功**しました。外部モニターは同じMPG 491C OLEDで、SDR・HDRオンの両方で5分以上の4K再生を確認しています。これはこの機種・構成での結果であり、「Thunderboltなら必ずIntel」という意味ではありません。[端子変更前後の実測](docs/intel-4k.md#外部モニターでの4kとhdr)
 
 ## デバッグ・再生の確認
 
@@ -140,7 +166,11 @@ powershell -NoProfile -File scripts/package.ps1
 
 Windows Edge extension with a one-click full-HD request toggle. Right-click its toolbar icon and choose the debug UI item for diagnostics; the page overlay is hidden by default. v0.4.0 adds a normal full-HD mode without the old 75-second duration or one-SDK/POST/master limits. The HD badge indicates the requested mode, not verified picture quality. Native errors still stop the mode and reset the saved preference to OFF.
 
-**4K video playback was observed for 313.74 seconds on an Intel Iris Xe laptop using regular Edge and the existing v0.3.16 HDR10 SDK PlayReady mode:** 7,525 additional frames, zero additional drops, and three successful initial license updates. The same laptop's NVIDIA-direct configuration failed with an output-protection error at 1080p; actual 4K decoding was not attempted there. This does not establish a vendor-wide defect. The internal display was 2560×1600 in SDR mode, so this proves 4K source decoding, not native 4K output or HDR fidelity. [Recorded evidence](docs/intel-4k.md).
+**User-facing guidance: Intel integrated graphics can use 4K HDR in the tested configuration; NVIDIA/AMD discrete GPUs are limited to the full-HD SDR mode in this project's guidance.** This is not a hardware capability limit or a guarantee that every dGPU can play 1080p. Intel validation covers Iris Xe, not every Intel generation or Arc GPU.
+
+On September 12, the same laptop played 3840×2160 on an external MPG 491C OLED for **301.03 seconds with SDR output and 307.72 seconds with HDR output**, using regular Edge 153.0.4234.32 and the existing v0.3.16 HDR10 SDK PlayReady mode. The HDR run advanced 7,393 frames with zero drops, while display diagnostics confirmed RGB 10-bit HDR at 5120×1440/144Hz and Intel VideoDecode activity. Three initial persistent-license sessions succeeded. The earlier internal-display SDR run lasted 313.74 seconds. These are source-playback measurements, not native 4K panel output or HDR color/luminance calibration. [Recorded evidence](docs/intel-4k.md).
+
+**On dual-GPU laptops, check the monitor's physical output port as well as Edge's GPU preference.** In this test, selecting Intel for Edge while the monitor remained on the NVIDIA-connected port still failed with an output-protection error. Moving the same monitor cable to the Intel-connected port enabled playback. Port routing is model-specific; USB-C/HDMI/Thunderbolt labels alone do not identify the GPU. These results do not prove a vendor-wide defect or identify the cause of the separate AMD freezes.
 
 v0.5.0 adds a right-click **Intel 4K** entry for that existing mode, with no 30-second playback cap. It checks a WebGL GPU-vendor hint at selection and after reload, refuses non-Intel/unknown results, and remains opt-in for one page. WebGL cannot certify the protected-video/output route. New UI hardware validation, later timed key rotation and full-title playback remain unverified. The separate diagnostic modes retain their 75-second FHD and 30-second HDR limits.
 

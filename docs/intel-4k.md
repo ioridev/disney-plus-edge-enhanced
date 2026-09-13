@@ -1,8 +1,44 @@
 # Intel内蔵GPUでの4K実再生記録
 
-2026-09-08のノートPC側の作業記録と保存済み観測値を確認した要約です。新たな再生実験ではなく、v0.3.16の既存モードで実施済みの結果です。作品・アカウント・ホスト名、認証情報、生の通信やライセンスは含めません。
+2026-09-08と2026-09-12のノートPC側の作業記録・保存済み観測値を確認し、2026-09-13に更新した要約です。今回新たに再生したのではなく、v0.3.16の既存モードで実施済みの結果を転記しています。作品・アカウント・ホスト名、認証情報、生の通信やライセンスは含めません。
 
-## 成功した構成とモード
+**Intel Iris Xeで、外部モニターへのHDRオン・RGB 10bit出力中も、4K映像を5分以上継続再生できました。** Intel内蔵GPUは確認済み構成で4K HDR、dGPUは通常の1080p SDRモードまで、という利用案内です。全Intel製品の動作保証でも、全dGPUで1080p成功を確認したという意味でもありません。
+
+## 外部モニターでの4KとHDR
+
+2026-09-12、同じノートと外部モニターで、接続端子とWindows HDRを順に比較しました。
+
+- PC: ASUS ROG Flow Z13 GZ301VV、Intel Iris Xe＋NVIDIA GeForce RTX 4060 Laptop GPU。
+- 通常Edge 153.0.4234.32、Windows 11 build 26200.9445。Intelドライバー32.0.101.6127、NVIDIAドライバー32.0.15.5597。
+- 外部MPG 491C OLEDのみ有効。デスクトップは5120×1440・144Hz。内蔵パネルはこの比較には使っていません。
+- 拡張v0.3.16、成功時のモードは `4k-hdr10-sdk-playready`。PlayReady有効・Widevine無効。端子変更後の成功試験では拡張ソースやドライバーを変更していません。
+- 外部HDR試験に先立つSDR試験から、WindowsのEdge GPU指定はIntel優先を維持。HDRはSDR成功後にユーザーがオンにしました。
+
+| 条件 | 実測結果 |
+| --- | --- |
+| NVIDIA側端子・Edge自動GPU選択 | 単一PQ候補の4K試験は、3840×2160のメタデータ・ライセンスupdate成功の後に `0x8004CD22`。実フレーム進行は未確認 |
+| NVIDIA側端子・EdgeをIntel描画に指定 | 単一PQ候補・通常4Kモードとも `0xC0262500`。Edgeの `GPU0 ACTIVE` と `GL_RENDERER` はIntelでも、物理出力はNVIDIAのまま |
+| **Intel側端子・SDR／RGB 8bit** | **3840×2160を301.028331秒、7,219フレーム進行、drop 0、再生エラーなし** |
+| **同じIntel側端子・HDRオン／RGB 10bit** | **3840×2160を307.718852秒、7,393フレーム進行、drop 0、再生エラーなし** |
+
+この機種では、XG Mobile横のUSB-Cからもう一方のThunderbolt 4端子へケーブルを差し替えると、CCDで確認したモニターの出力アダプターがNVIDIAからIntelへ変わりました。モニター側は同じです。成功時は再生中のEdgeのVideoDecodeカウンターもIntel表示アダプターのLUIDと一致しました。
+
+**アプリ別GPU指定だけでは物理的な出力元まで切り替わらない、という実例です。** 端子名だけで接続GPUを一般化せず、機種の配線とWindowsの表示情報を確認してください。[ASUSの当該機種の端子仕様](https://rog.asus.com/us/laptops/rog-flow/rog-flow-z13-2023-series/)は端子の種類を確認する資料であり、この試験で観測したGPU配線の代わりにはしません。
+
+### 5分区間の照合値
+
+| 出力 | メディア時刻（秒） | 総フレーム | drop | 4K区間の進行 |
+| --- | --- | --- | --- | --- |
+| SDR | 62.156787 → 363.185118 | 997 → 8216 | 0 → 0 | 301.028331秒・7,219枚 |
+| HDRオン | 70.495376 → 378.214228 | 1186 → 8579 | 0 → 0 | 307.718852秒・7,393枚 |
+
+両試験とも低解像度から4Kへ上昇後の計測です。途中の採取点もすべて3840×2160・paused=false・readyState=4で、再生／スクリプトエラーはありませんでした。フレーム数は約1秒更新の診断UIから取得しており、動画時刻とは厳密に同時採取ではありません。
+
+接続CDMは `com.microsoft.playready.recommendation.3000`、persistent-license。初期の3セッションでgenerateRequest・update・usableを確認しました。HDR出力は開始前だけでなく再生中にも、ActiveColorMode=HDR・RGB 10bit・144Hz・Intel経路を再確認しています。試験終了は検証タブを閉じて実施しました。
+
+端子変更直後の単一候補・30秒比較モードはSDK初期化ガードで再生前に停止したため、成功とは数えていません。上記の成功は、コードやガードを変えずに既存の通常4Kモードを使った結果です。NVIDIA側での通常4Kモードの失敗も記録されているため、30秒制限だけで説明できる差ではありません。
+
+## 内蔵画面で成功した構成とモード（2026-09-08）
 
 - ASUS ROG Flow Z13 GZ301VV、Intel Iris Xe。通常Edge 152.0.4191.66。
 - G-Helperの性能モードは「ターボ」、GPUモードは「標準」。両GPUが有効な構成で、Intelが内蔵画面を担当。ターボ自体が必須と証明したわけではありません。
@@ -11,7 +47,7 @@
 - シナリオ `tv-drm-ctr-h265-hdr10-atmos`、要求上限3840×2160、SDK上限2160p。既存のSDKセッション内の候補リストへUHDを追加する経路。
 - 単一候補固定ではなく、720p → 1080p → 4Kの適応的な切替を維持。元から30秒タイマーや第2native generateRequestで停止する制限はないため、実機試験時にコードを改変していません。
 
-## 4K到達後の実測
+## 内蔵画面での4K到達後の実測
 
 | 観測 | 動画寸法 | メディア時刻（秒） | 総フレーム | drop |
 | --- | --- | ---: | ---: | ---: |
@@ -29,13 +65,19 @@
 
 ## NVIDIAとAMDの結果を混同しない
 
-同ノートでGPUモード「Ultimate / dGPU専用」、NVIDIAの内蔵画面直結経路では、HW PlayReadyの1080p試験が `0x8004CD22` の出力保護エラーになりました。無変更の720pは動作しました。**ログ上、NVIDIA直結で4Kの実復号は試していません。** 「NVIDIAでは4Kを再生できた記録がない」は正しいものの、「NVIDIA全製品で4K不可」とは言えません。
+9月8日の同ノートでは、GPUモード「Ultimate / dGPU専用」、NVIDIAの内蔵画面直結経路で、HW PlayReadyの1080p試験が `0x8004CD22` の出力保護エラーになりました。無変更の720pは動作しました。その時点では4Kを試していませんでしたが、**9月12日のNVIDIA側外部出力では4K要求も試し、実フレーム進行を確認する前に出力保護エラーで終了**しました。NVIDIA全製品で4K不可と証明したものではありません。
+
+Microsoftは `0x8004CD22` をハードウェアDRMの出力保護要件を満たせないエラーとして説明しています。[PlayReadyの考慮事項](https://learn.microsoft.com/ja-jp/windows/uwp/audio-video-camera/playready-client-sdk#考慮事項)。NVIDIAの診断画面ではGPU・モニターがHDCP対応と表示されましたが、それだけでDisney+のライセンスが要求する保護条件まで満たすとは判断できません。
+
+このため、利用者向けには **NVIDIA / AMDのdGPUは1080p SDRまで、4K / HDRは案内対象外**としています。dGPUのフルHDを一律に動作確認済みとは扱いません。AMDの1080p HDR試験でもフリーズしており、「解像度を1080pにすればHDRも安全」という意味ではありません。
 
 GPUモード変更に加えて再起動も介在します。表示・デコード・ドライバー・保護経路の組合せの差であり、GPU単体の故障やメーカー全体の不具合の証明ではありません。別のAMD機でのOSフリーズとも同一原因だと確定していません。
 
 ## 表示と安定性の限界
 
-成功時の内蔵パネルは **2560×1600、RGB 8 bpc、約165Hz、通常の表示モードはSDR**。3840×2160映像の復号・フレーム進行が成功したのであって、ネイティブ4Kパネルでの表示やHDR輝度・色の再現を測定したわけではありません。HDR10要求と最終画面のHDR表示を区別します。
+9月8日の成功時の内蔵パネルは **2560×1600、RGB 8 bpc、約165Hz、SDR出力**でした。9月12日には、外部モニターの **5120×1440・144Hz・RGB 10bit・HDR出力**でも4K継続再生を確認しています。「Intel成功時はSDR出力だけ」という以前の確認範囲は、この追加試験で更新されました。
+
+一方、物理画面の解像度はどちらも3840×2160ではありません。確認したのは4Kソースの復号・フレーム進行と、後者でWindowsがHDR出力中であることです。選択映像のHDR伝達特性・色メタデータ、トーンマッピング、輝度・色の正確さ、ネイティブ4Kパネル表示を独立に測定した結果ではありません。
 
 5分の動作確認は通過しましたが、作品全編、後続の時間ベースの鍵切替、シーク、吹替変更、別作品・別Intel世代・Arc等は未確認です。
 
@@ -47,4 +89,4 @@ WebGLの描画GPUは保護映像のデコードGPU・出力先の証明ではあ
 
 新UIは29オフライン実行・20ファイルと、Playwrightの専用プロファイルで検査しました。隔離ブラウザーでは全通信を人工ページに置き換え、GPU分類もIntel/NVIDIAのモックを使用。Intel選択後の4Kモードとバッジ、GPU判定が再読み込み後に変わった場合の拒否、判定不能時の説明を確認しています。実SDK・CDM・ライセンス・映像を使わず、Edgeのネイティブ右クリック操作や新UIからの実機再生は再検証していません。
 
-参照した保存記録は `4k-five-minute-intel-observations.json`、`4k-five-minute-intel-gpu-counters-4k-steady.json`、`display-topology-before-five-minute.json`、`run-log.md`、`DisneyPlus-4K-usage-and-result-2026-09-08.md`。生ログは配布せず、上記の数値と確認範囲だけを転記しています。
+参照した保存記録は、9月8日の `4k-five-minute-intel-observations.json`、`4k-five-minute-intel-gpu-counters-4k-steady.json`、`display-topology-before-five-minute.json`、`run-log.md`、`DisneyPlus-4K-usage-and-result-2026-09-08.md` と、9月12日の `4k-short-result.json`、`4k-short-edge-intel-result.json`、`4k-normal-edge-intel-result.json`、`user-edge-gpu-export.json`、`4k-after-port-change-result.json`、`4k-hdr-on-result.json`、`4k-hdr-on-gpu-counters.json`、`display-topology-hdr-on-during-playback.json`。生ログは配布せず、上記の数値と確認範囲だけを転記しています。
