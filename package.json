@@ -1,13 +1,13 @@
 {
-  "name": "disney-plus-edge-enhanced",
-  "version": "0.5.0",
+  "name": "disney-plus-4khdr-enhanced",
+  "version": "0.5.1",
   "private": true,
   "description": "Disney+ full-HD toggle, Intel-gated 4K selection and diagnostics for Windows Edge. Five-minute 4K playback observed on one Intel iGPU laptop.",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ioridev/disney-plus-edge-enhanced.git"
+    "url": "https://github.com/ioridev/disney-plus-4khdr-enhanced.git"
   },
   "engines": { "node": ">=24" },
   "scripts": {

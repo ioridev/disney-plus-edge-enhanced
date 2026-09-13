@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name         Disney+ Edge Enhanced
-// @name:ja      Disney+ Edge Enhanced・画質とフレーム進行
+// @name         Disney+ 4KHDR Enhanced
+// @name:ja      Disney+ 4KHDR Enhanced
 // @namespace    https://github.com/ioridev/disney-plus-edge-enhanced
-// @homepageURL  https://github.com/ioridev/disney-plus-edge-enhanced
-// @supportURL   https://github.com/ioridev/disney-plus-edge-enhanced/issues
+// @homepageURL  https://github.com/ioridev/disney-plus-4khdr-enhanced
+// @supportURL   https://github.com/ioridev/disney-plus-4khdr-enhanced/issues
 // @license      MIT
-// @version      0.5.0
+// @version      0.5.1
 // @description  Full-HD request mode and optional playback diagnostics for Disney+ on Windows Edge. Alt+Shift+4 opens the panel. Does not bypass DRM.
 // @description:ja Disney+のフルHD要求モードと任意表示の再生診断。Alt+Shift+4でパネルを開閉します。DRMは回避しません。
 // @match        https://www.disneyplus.com/*
@@ -18,9 +18,9 @@
 (() => {
   "use strict";
 
-  const VERSION = "0.5.0";
+  const VERSION = "0.5.1";
   const STORAGE_KEY = "ioridev.disneyplus4k.mode.v1";
-  const TEST_TICKET_KEY = "ioridev.disneyplus4k.once.v0.5.0";
+  const TEST_TICKET_KEY = "ioridev.disneyplus4k.once.v0.5.1";
   const CHECKPOINT_KEY = "ioridev.disneyplus4k.checkpoint.v1";
   const DEFAULT_MODE = "original";
   const DEBUG_UI_KEY = "ioridev.disneyplus.debug-ui.v1";
@@ -3751,7 +3751,7 @@ function createSingleVariantNetworkAdapter({
       : "未検出";
     const eme = describeEmeAttempt(displayedEmeAttempt());
     return [
-      `Disney+ Edge Enhanced v${VERSION}`,
+      `Disney+ 4KHDR Enhanced v${VERSION}`,
       `モード: ${plan.label}`,
       `実験ガード: ${state.guardNotice}`,
       `GPU参考判定（WebGL・保護映像の経路確定ではない）: ${gpuVendorHint}`,
@@ -3908,10 +3908,10 @@ function createSingleVariantNetworkAdapter({
         .collapsed .head { padding:7px; }
         .collapsed .title { display:none; }
       </style>
-      <section class="panel" aria-label="Disney+ Edge Enhanced diagnostics">
+      <section class="panel" aria-label="Disney+ 4KHDR Enhanced diagnostics">
         <div class="head">
           <span class="badge">?</span>
-          <span class="title"><strong>Disney+ Edge Enhanced v${VERSION}</strong><span>寸法とフレーム進行を別表示</span></span>
+          <span class="title"><strong>Disney+ 4KHDR Enhanced v${VERSION}</strong><span>寸法とフレーム進行を別表示</span></span>
           <button class="collapse" type="button" title="Alt+Shift+4でも開閉">閉じる</button>
         </div>
         <div class="body">

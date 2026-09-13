@@ -11,7 +11,7 @@ const IS_UHD = [MODE_UHD, MODE_UHD_HEVC].includes(MODE);
 assert.ok([MODE_1080, MODE_UHD, MODE_UHD_HEVC].includes(MODE),
   `usage: node tests/test-sdk-playready-flow.mjs <${MODE_1080}|${MODE_UHD}|${MODE_UHD_HEVC}>`);
 const NATIVE_CAP_MODE = '1080p-hevc-native-cap';
-const SCRIPT_VERSION = '0.5.0';
+const SCRIPT_VERSION = '0.5.1';
 const TICKET_KEY = `ioridev.disneyplus4k.once.v${SCRIPT_VERSION}`;
 const STORAGE_KEY = 'ioridev.disneyplus4k.mode.v1';
 const CHECKPOINT_KEY = 'ioridev.disneyplus4k.checkpoint.v1';

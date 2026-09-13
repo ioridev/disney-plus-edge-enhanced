@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('../extension/DisneyPlus-Edge-Enhanced.user.js', import.meta.url), 'utf8');
 const MODE = '1080p-hevc-native-cap';
-const SCRIPT_VERSION = '0.5.0';
+const SCRIPT_VERSION = '0.5.1';
 const TICKET_KEY = `ioridev.disneyplus4k.once.v${SCRIPT_VERSION}`;
 const STORAGE_KEY = 'ioridev.disneyplus4k.mode.v1';
 const CHECKPOINT_KEY = 'ioridev.disneyplus4k.checkpoint.v1';

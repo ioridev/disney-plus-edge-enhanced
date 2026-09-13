@@ -1,6 +1,6 @@
 # 出典と第三者の権利
 
-Disney+ Edge Enhancedの独自コードは[MIT License](LICENSE)で公開しています。Disney+ / Microsoft / GPUメーカーとの提携・承認を示すものではありません。各名称・商標はそれぞれの権利者に属します。
+Disney+ 4KHDR Enhancedの独自コードは[MIT License](LICENSE)で公開しています。Disney+ / Microsoft / GPUメーカーとの提携・承認を示すものではありません。各名称・商標はそれぞれの権利者に属します。
 
 READMEのヘッダー画像は本プロジェクト用にAI生成したイラストです。公式ロゴや作品映像ではなく、製品・サービスとの提携を示すものではありません。
 

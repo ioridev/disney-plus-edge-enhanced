@@ -1,4 +1,4 @@
-# Disney+ Edge Enhanced
+# Disney+ 4KHDR Enhanced
 
 [English](README.md) | 日本語
 
@@ -8,7 +8,7 @@
 | NVIDIA / AMD dGPU | フルHD（1080p SDR）まで | 4K/HDRは本拡張では非推奨 |
 | デュアルGPU（Intel + dGPU） | モニターの接続先GPUによる | 端子の物理接続先もIntelか確認 |
 
-![Disney+ Edge Enhanced — フルHD・Intel向け4K（実験版）の非公式Edge拡張](docs/assets/readme-banner.png)
+![Disney+ 4KHDR Enhanced — フルHD・Intel向け4K（実験版）の非公式Edge拡張](docs/assets/readme-banner-4khdr.png)
 
 > [!WARNING]
 > **AMD環境での4K/HDR（1080p HDR含む）再生時にフリーズやBSODが発生しています。**
@@ -30,7 +30,7 @@ Windows版Microsoft EdgeでDisney+の画質要求（フルHD / Intel向け4K）�
 
 ## インストール・更新
 
-1. [Releases](https://github.com/ioridev/disney-plus-edge-enhanced/releases) またはソースZIPをダウンロードして展開する。
+1. [Releases](https://github.com/ioridev/disney-plus-4khdr-enhanced/releases) またはソースZIPをダウンロードして展開する。
 2. Edgeで `edge://extensions` を開き、**開発者モード** をオンにする。
 3. **展開して読み込み** から、展開先の `extension` フォルダー（`manifest.json` がある場所）を選択する。
 4. ツールバーに拡張機能をピン留めし、Disney+のページを再読み込みする。

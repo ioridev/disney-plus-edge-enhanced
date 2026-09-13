@@ -1,4 +1,4 @@
-# Disney+ Edge Enhanced
+# Disney+ 4KHDR Enhanced
 
 English | [日本語](README.ja.md)
 
@@ -8,7 +8,7 @@ English | [日本語](README.ja.md)
 | NVIDIA / AMD dGPU | Up to Full HD (1080p SDR) | 4K/HDR is not recommended in this extension |
 | Dual GPU (Intel + dGPU) | Depends on connected GPU | Verify physical port is wired to Intel |
 
-![Disney+ Edge Enhanced — Unofficial Edge extension for Full HD and Intel 4K (experimental)](docs/assets/readme-banner.png)
+![Disney+ 4KHDR Enhanced — Unofficial Edge extension for Full HD and Intel 4K (experimental)](docs/assets/readme-banner-4khdr.png)
 
 > [!WARNING]
 > **Freezes and BSODs have occurred during 4K/HDR playback (including 1080p HDR) on AMD configurations.**
@@ -30,7 +30,7 @@ These settings align the environment with the extension's operating requirements
 
 ## Installation & Updates
 
-1. Download and extract the package from [Releases](https://github.com/ioridev/disney-plus-edge-enhanced/releases) or the source ZIP.
+1. Download and extract the package from [Releases](https://github.com/ioridev/disney-plus-4khdr-enhanced/releases) or the source ZIP.
 2. Open `edge://extensions` in Edge and enable **Developer mode**.
 3. Click **Load unpacked** and select the extracted `extension` directory (the folder containing `manifest.json`).
 4. Pin the extension to the toolbar, then reload the Disney+ page.

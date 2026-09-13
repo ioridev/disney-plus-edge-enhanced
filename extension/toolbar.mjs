@@ -26,8 +26,8 @@ export function applyPageCommand(command) {
       // next reload. Do not inject another copy into an old playback session.
       const key = 'ioridev.disneyplus4k.mode.v1';
       const mode = localStorage.getItem(key) === 'fullhd' ? 'original' : 'fullhd';
-      sessionStorage.removeItem('ioridev.disneyplus4k.once.v0.5.0');
-      if (sessionStorage.getItem('ioridev.disneyplus4k.once.v0.5.0') !== null) return { ok: false };
+      sessionStorage.removeItem('ioridev.disneyplus4k.once.v0.5.1');
+      if (sessionStorage.getItem('ioridev.disneyplus4k.once.v0.5.1') !== null) return { ok: false };
       localStorage.setItem(key, mode);
       return { ok: localStorage.getItem(key) === mode, reload: true, mode };
     }
@@ -63,7 +63,7 @@ export function installToolbar(api) {
     await Promise.all([
       api.action.setBadgeText({ tabId, text: view.text }),
       api.action.setBadgeBackgroundColor({ tabId, color: view.color }),
-      api.action.setTitle({ tabId, title: `Disney+ Edge Enhanced — ${view.title}` }),
+      api.action.setTitle({ tabId, title: `Disney+ 4KHDR Enhanced — ${view.title}` }),
     ]);
   }
   async function handleCommand(tab, command) {

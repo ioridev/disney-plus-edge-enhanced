@@ -9,7 +9,7 @@ const SDK_MODE = process.argv[2] ?? MODE_HDR10;
 assert.ok([MODE_HDR10, MODE_SDR].includes(SDK_MODE),
   `usage: node tests/test-sdk-resolution-policy.mjs <${MODE_HDR10}|${MODE_SDR}>`);
 const SDK_VERSION = '26.10.0-jasmine';
-const SCRIPT_VERSION = '0.5.0';
+const SCRIPT_VERSION = '0.5.1';
 const TICKET_KEY = `ioridev.disneyplus4k.once.v${SCRIPT_VERSION}`;
 const DOCUMENT_URL = 'https://www.disneyplus.com/ja-jp/play/sdk-resolution-policy-test';
 const PLAYBACK_SCENARIO = SDK_MODE === MODE_HDR10 ? 'tv-drm-ctr-h265-hdr10-atmos' : 'tv-drm-ctr-h265-atmos';

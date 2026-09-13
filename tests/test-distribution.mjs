@@ -9,7 +9,10 @@ const pkg = JSON.parse(read('package.json'));
 const source = read('extension/DisneyPlus-Edge-Enhanced.user.js');
 
 assert.equal(manifest.manifest_version, 3);
-assert.equal(manifest.name, 'Disney+ Edge Enhanced');
+assert.equal(manifest.name, 'Disney+ 4KHDR Enhanced');
+assert.equal(manifest.action.default_title, 'Disney+ 4KHDR Enhanced — クリックでフルHD ON/OFF');
+assert.equal(pkg.name, 'disney-plus-4khdr-enhanced');
+assert.equal(pkg.repository.url, 'https://github.com/ioridev/disney-plus-4khdr-enhanced.git');
 assert.equal(manifest.version, pkg.version);
 assert.equal(pkg.license, 'MIT');
 assert.deepEqual(fs.readdirSync(new URL('extension/', root)).sort(), ['DisneyPlus-Edge-Enhanced.user.js', 'background.mjs', 'bridge.js', 'manifest.json', 'toolbar.mjs']);
@@ -19,6 +22,8 @@ assert.equal(manifest.action.default_popup, undefined, 'click toggles directly w
 assert.equal(manifest.host_permissions, undefined);
 assert.equal(manifest.externally_connectable, undefined);
 const packageScript = read('scripts/package.ps1');
+assert.ok(packageScript.includes('disney-plus-4khdr-enhanced-v$packageVersion.zip'), 'release ZIP uses the new name');
+assert.ok(packageScript.includes("'DisneyPlus-4KHDR-Enhanced.user.js'"), 'standalone release asset uses the new name');
 for (const name of fs.readdirSync(new URL('extension/', root))) {
   assert.ok(packageScript.includes(`'extension/${name}'`), `${name} must be included in the release archive`);
 }
@@ -35,7 +40,14 @@ assert.deepEqual(manifest.content_scripts[1], {
   all_frames: false,
 });
 assert.match(source, /\/\/ @license\s+MIT/);
-assert.match(source, /\/\/ @name\s+Disney\+ Edge Enhanced\n/);
+assert.match(source, /\/\/ @name\s+Disney\+ 4KHDR Enhanced\n/);
+assert.match(source, /\/\/ @name:ja\s+Disney\+ 4KHDR Enhanced\n/);
+assert.match(source, /\/\/ @namespace\s+https:\/\/github\.com\/ioridev\/disney-plus-edge-enhanced\n/, 'legacy userscript namespace stays an identifier');
+assert.match(source, /\/\/ @homepageURL\s+https:\/\/github\.com\/ioridev\/disney-plus-4khdr-enhanced\n/);
+assert.match(source, /\/\/ @supportURL\s+https:\/\/github\.com\/ioridev\/disney-plus-4khdr-enhanced\/issues\n/);
+for (const stableIdentifier of ['ioridev.disneyplus4k.mode.v1', 'ioridev.disneyplus4k.checkpoint.v1', 'ioridev.disneyplus.debug-ui.v1', '__DisneyPlusEdgeEnhancedToolbar', '__ioridevDisneyPlus4kEdgeV1']) {
+  assert.ok(source.includes(`"${stableIdentifier}"`), `branding keeps ${stableIdentifier} compatible`);
+}
 assert.match(source, /const DEFAULT_MODE = "original";/);
 assert.doesNotMatch(source, /ioridev\.local/);
 assert.match(read('LICENSE'), /Copyright \(c\) 2026 ioridev/);
@@ -45,7 +57,7 @@ const readmeLanguages = [
 ];
 for (const [name, languageSwitch] of readmeLanguages) {
   const readme = read(name);
-  assert.equal(readme.split(/\r?\n/)[0], '# Disney+ Edge Enhanced', `${name}: project title`);
+  assert.equal(readme.split(/\r?\n/)[0], '# Disney+ 4KHDR Enhanced', `${name}: project title`);
   assert.equal(readme.split(/\r?\n/)[2], languageSwitch, `${name}: reciprocal language link at the top`);
   assert.ok(packageScript.includes(`'${name}'`), `${name} must be included in the release archive`);
   const supportTable = readme.match(/^\|[^\r\n]+\|\r?\n\|[ :|\-]+\|\r?\n(?:\|[^\r\n]+\|\r?\n)+/m);
@@ -53,7 +65,7 @@ for (const [name, languageSwitch] of readmeLanguages) {
   for (const label of ['Intel', 'NVIDIA', 'AMD', '4K', '1080p SDR']) {
     assert.ok(supportTable[0].includes(label), `${name}: support table includes ${label}`);
   }
-  const bannerIndex = readme.search(/^!\[Disney\+ Edge Enhanced[^\]\r\n]*\]\(docs\/assets\/readme-banner\.png\)/m);
+  const bannerIndex = readme.search(/^!\[Disney\+ 4KHDR Enhanced[^\]\r\n]*\]\(docs\/assets\/readme-banner-4khdr\.png\)/m);
   assert.ok(bannerIndex > supportTable.index, `${name}: GPU table appears before the banner`);
   for (const term of ['PlayReady DRM', 'Widevine DRM', 'HEVC', 'edge://flags', 'edge://extensions', 'Alt+Shift+4', 'npm test', 'npm run build', 'npm run build:check', '> [!WARNING]', 'BSOD']) {
     assert.ok(readme.includes(term), `${name}: required setup, usage or safety information: ${term}`);
@@ -66,10 +78,10 @@ for (const [name, languageSwitch] of readmeLanguages) {
     assert.ok(packageScript.includes(`'${relativePath}'`), `${name}: local link is included in the release: ${relativePath}`);
   }
 }
-const banner = fs.readFileSync(new URL('docs/assets/readme-banner.png', root));
+const banner = fs.readFileSync(new URL('docs/assets/readme-banner-4khdr.png', root));
 assert.deepEqual(banner.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), 'README banner must be a PNG');
 assert.ok(banner.readUInt32BE(16) > banner.readUInt32BE(20), 'README banner must be landscape');
-assert.ok(packageScript.includes("'docs/assets/readme-banner.png'"), 'packaged README must include its local banner');
+assert.ok(packageScript.includes("'docs/assets/readme-banner-4khdr.png'"), 'packaged README must include its local banner');
 assert.match(read('docs/intel-4k.md'), /313\.738642/);
 assert.ok(packageScript.includes("'docs/intel-4k.md'"));
 assert.match(read('PRIVACY.md'), /activeTab/);
