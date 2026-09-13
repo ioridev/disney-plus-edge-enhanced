@@ -1,177 +1,92 @@
 # Disney+ Edge Enhanced
 
-## GPU別の対応表
-
-Windows版Edgeでの利用目安です（2026-09-13更新）。
-
-| GPU・接続構成 | 利用する画質 | 外部モニターを使う場合 |
+| GPU・接続構成 | 利用できる画質 | 外部モニター利用時 |
 | --- | --- | --- |
-| **Intel内蔵GPU**で動画処理・画面出力 | **4K HDR：動作確認済み** | Intel側につながる映像出力端子を使う |
-| **NVIDIA / AMDのdGPU**（専用GPU）で利用 | **フルHD（1080p SDR）まで** | 4K / HDRは本拡張の通常利用の案内対象外 |
-| **Intel内蔵GPU＋dGPU**のデュアルGPU機 | **モニターの接続先GPUによる** | EdgeをIntel指定にするだけでなく、**端子の接続先もIntel**か確認する |
-
-Intel Iris Xeで実測しています。全Intel世代の動作保証ではありません。dGPUの「フルHDまで」は本拡張の案内範囲であり、全機種で1080p成功を確認した意味でも、GPU自体の性能上限でもありません。出力保護の条件によってフルHDも失敗する場合があります。[検証構成と制限](docs/intel-4k.md)
-
-**外部モニターの端子選びが重要です。** 検証ノートでは、NVIDIA側の端子では再生できず、Intel側の端子へ差し替えると、同じモニターで4K・HDRオンの5分再生に成功しました。[デュアルGPU機の接続手順](#デュアルgpu機で外部モニターを使う場合)
+| Intel内蔵GPU（処理・出力） | 4K HDR | Intel側につながる映像端子を使用 |
+| NVIDIA / AMD dGPU | フルHD（1080p SDR）まで | 4K/HDRは本拡張では非推奨 |
+| デュアルGPU（Intel + dGPU） | モニターの接続先GPUによる | 端子の物理接続先もIntelか確認 |
 
 ![Disney+ Edge Enhanced — フルHD・Intel向け4K（実験版）の非公式Edge拡張](docs/assets/readme-banner.png)
 
-Windows版Microsoft Edgeで、**ツールバーのアイコンをクリックしてDisney+のフルHD要求をON/OFF**にする拡張機能です。Intel GPU向けの4K選択とデバッグUIは右クリックメニューにまとめ、普段はページ上にUIを出しません。Manifest V3拡張とユーザースクリプトを同梱しています。
-
-**Intel内蔵GPUでは、内蔵画面に加え、外部モニターのHDRオン・RGB 10bit出力でも4K映像を5分以上継続再生できました。** 最新の外部HDR試験は約5分8秒・7,393フレーム進行・ドロップ0。実機記録は既存v0.3.16の「4K HDR10（SDKのPlayReady選択）」によるものです。v0.5.0はそのモードをIntel向けの右クリック項目から選べるようにしました。[構成・実測・制限](docs/intel-4k.md)。
-
-通常フルHDモードには再生時間制限がありません。Intel向け4Kも30秒停止のない既存モードを使います。ただし、全GPU・全編・HDR表示品質を保証するものではありません。
-
 > [!WARNING]
-> **AMD機の4K / HDR実験では、PC全体のフリーズ・ブルースクリーンが発生しました。1080pのHDR試験でもフリーズしています。** NVIDIA直結経路でも出力保護エラーがありました。dGPUでは通常のフルHD **SDR** モードまでを案内し、4K / HDRは勧めません。タイマーやGPU名の判定はOS・ドライバー停止を防ぐ仕組みではありません。未保存の作業がある環境で試さず、同じ条件で停止した場合は繰り返さないでください。
+> **AMD環境での4K/HDR（1080p HDR含む）再生時にフリーズやBSODが発生しています。**
+> dGPUではSDR（フルHDまで）を使用し、一度フリーズした条件は繰り返さないでください。拡張のタイマー等でOSやドライバーの停止を防ぐことはできません。
 
-[ダウンロード（実験版）](https://github.com/ioridev/disney-plus-edge-enhanced/releases) · [確認できたこと](docs/diagnostics.md) · [関連報告・修正情報](docs/related-issues.md) · [プライバシー](PRIVACY.md)
+Windows版Microsoft EdgeでDisney+の画質要求（フルHD / Intel向け4K）を切り替える非公式拡張機能です。DRM解除、鍵抽出、ライセンス偽造、HDCP偽装、動画ダウンロード等の機能はありません。正規の契約とログインが必要です。
 
-## 現状
+検証機のIntel Iris Xe構成では約5分間の4K HDR再生を確認していますが、全Intel製品や全dGPUでの動作を保証するものではありません。dGPUの上限はGPU自体の性能限界ではなく本拡張の対応範囲です。詳細な数値や未確認項目の検証履歴は [docs/intel-4k.md](docs/intel-4k.md)、[docs/diagnostics.md](docs/diagnostics.md)、[docs/related-issues.md](docs/related-issues.md) を参照してください。
 
-| 項目 | 確認状況 |
-| --- | --- |
-| 1080p SDR | 2026-09-08、v0.3.13・Edge Betaの既存プロファイルで約70秒の実再生。最終1706フレーム、drop 0 |
-| v0.4.0の通常フルHD | 75秒タイマー・SDK/再生POST/masterの1回制限を撤去。繰り返し要求と正規の鍵更新をモックで確認。長時間・作品全編の実再生は未確認 |
-| v0.4.0のUI | 隔離したChromiumで通常時のUI非表示、デバッグ開閉、ページ側ON/OFF操作後の再読み込みとバッジ連携を確認。Edgeのネイティブなクリック・右クリック操作は実機未確認 |
-| Intel内蔵GPU / 内蔵画面の4K | 2026-09-08、v0.3.16。3840×2160を313.738642秒維持、7,525フレーム増加・追加drop 0。画面出力はSDR |
-| Intel内蔵GPU / 外部画面の4K・SDR出力 | 2026-09-12、通常Edge 153.0.4234.32・v0.3.16。3840×2160を301.028331秒維持、7,219フレーム増加・drop 0 |
-| Intel内蔵GPU / 外部画面の4K・HDR出力 | 同日、3840×2160を307.718852秒維持、7,393フレーム増加・drop 0。HDRオン・RGB 10bitを再生中にも確認 |
-| 同ノートのNVIDIA側外部出力 | 4K開始時に `0x8004CD22`。EdgeをIntel描画に指定しても、外部出力がNVIDIAのままでは `0xC0262500`。端子変更後のIntel出力では成功 |
-| 実ディスプレイ / HDR | 外部MPG 491C OLEDは5120×1440・144Hz。4Kソース再生とHDR出力は確認したが、ネイティブ4Kパネル表示やHDR輝度・色の正確さの測定ではない |
-| v0.5.0 | 実再生済みの既存4Kモードへの入口とIntel参考判定を追加。新UIでの実機再検証・作品全編は未確認 |
+## 前提条件（Edgeの設定）
 
-## 関連報告・修正情報
+本拡張の動作条件を揃えるための設定です。Disney+公式の手順ではありません。フラグの有無はEdgeのバージョンで異なり、他サービスにも影響するため、元の値を控えて戻せるようにしてください。
 
-Chromium issue 544339013（出力色深度とPlayReadyの報告）、AMD 26.9.1の公開修正一覧、Microsoft Q&AのRX 9070 XTフリーズ報告、Windows 25H2の別DRM修正を、[出典・確認範囲つきで整理しています](docs/related-issues.md)。
-
-**本拡張でのフリーズと同一原因だと確認したものではありません。** Chromiumの原典全文・最新解決状態は未取得、AMDの修正一覧に記載がないことは未修正の証明ではありません。WindowsのBlu-ray/DVD/TV向け修正も、今回のストリーミング不具合の修正とは混同しません。
-
-## できること・しないこと
-
-- 明示的に選んだモードで、対象の再生要求のシナリオ・解像度上限や、対応SDKのセッション設定を限定変更します。
-- 対応するHLS masterから既存のHEVC/AAC候補を1本に絞る診断を行います。音声・字幕・鍵宣言や、映像の実解像度を偽装するものではありません。
-- manifest候補、動画の寸法、時間・フレーム進行、実際に接続したCDM、鍵状態の件数を分けて表示します。
-- **DRM解除、鍵抽出、ライセンス偽造、動画ダウンロード、HDCP判定の偽装は行いません。** 正規のログイン・視聴権限・CDM・出力条件が必要です。サービス側が許可しない品質は保証できません。
-- Disney+、Microsoft、各GPUメーカーの公式製品ではありません。映像・ロゴ・サービスSDK・CDMは配布していません。
-
-## Edgeの設定（実験の前提）
-
-**拡張を入れるだけでは、確認済みの比較条件は揃いません。** 以下は今回の実験条件であり、Disney+公式の4K有効化手順ではありません。変更前の値を記録してください。
-
-1. 試すWindows版Edgeで `edge://flags` を開き、Windows用の **PlayReady DRM** を **Enabled** にします。
-2. 同じEdgeの **Widevine DRM** を **Disabled** にします。別CDMへのフォールバックを比較結果と取り違えないための条件です。他の動画サイトに影響することがあるので、調査後は元の値へ戻してください。
-3. Edgeの「システムとパフォーマンス」で、利用可能な場合の**グラフィックス／ハードウェアアクセラレーションをオン**にします。
-4. **Edge本体を再起動**して反映します。タブの再読み込みだけでは不十分です。フリーズした実験タブは自動復元・自動再生しないでください。
-5. Windowsで **HEVC Video Extensions** が利用可能か確認します。インストール済みなら買い直す必要はありません。コーデックの存在だけで保護再生の成功は保証されません。
-
-フラグの名前・有無はEdgeの版によって異なります。見つからなければ、その版では前提を未確認として扱い、未確認のレジストリ変更などで代替しないでください。Edge Devを別に入れても、普段のEdgeの設定は引き継がれたとは限りません。
-
-Windows HDR、出力色深度（bpc）、Hz、GPU/MUX、ドライバー、SVM/VBSは別の比較条件です。一度に変更しないでください。8 bpcにすればフリーズを回避できる、という結果は得られていません。
+1. `edge://flags` で **PlayReady DRM** を **Enabled** に設定する。
+2. `edge://flags` で **Widevine DRM** を **Disabled** に設定する（他サービスへの影響に注意）。
+3. Edgeの設定「システムとパフォーマンス」で **グラフィックス／ハードウェアアクセラレーション** をオンにする。
+4. **Edge本体を再起動** する。
+5. Windowsで **HEVCビデオ拡張機能** が利用可能か確認する。
 
 ## インストール・更新
 
-1. [Releases](https://github.com/ioridev/disney-plus-edge-enhanced/releases)から `disney-plus-edge-enhanced-v0.5.0.zip` をダウンロードし、保持できる場所に展開します。GitHubのソースZIPでも構いません。
-2. Edgeで `edge://extensions` を開き、**開発者モード**をオンにします。
-3. **展開して読み込み（Load unpacked）**から、展開先の **`extension` フォルダー**を選びます。`manifest.json` が入っているフォルダーです。
-4. Edgeの拡張機能メニューから **Disney+ Edge Enhanced** をツールバーに表示／ピン留めします。
-5. Disney+ページを再読み込みします。新規導入時はバッジが **OFF** で、ページ上のパネルは出ません。旧Helperの設定を引き継いで **DBG** と出た場合は、右クリックのデバッグUIで「無変更」に戻してから使ってください。
+1. [Releases](https://github.com/ioridev/disney-plus-edge-enhanced/releases) またはソースZIPをダウンロードして展開する。
+2. Edgeで `edge://extensions` を開き、**開発者モード** をオンにする。
+3. **展開して読み込み** から、展開先の `extension` フォルダー（`manifest.json` がある場所）を選択する。
+4. ツールバーに拡張機能をピン留めし、Disney+のページを再読み込みする。
 
-同時に旧Helper、別の画質変更拡張、ユーザースクリプト版を有効にしないでください。すでに注入済みのコードは拡張をオフにしただけでは消えないので、Disney+タブも再読み込みするか閉じます。**更新時は拡張フォルダー全体を更新**し、拡張一覧の再読み込みを押してDisney+ページも再読み込みします。v0.4.0ではツールバー用のファイルと権限が追加されているため、本体JSだけの差し替えでは更新できません。
+※ 他の画質変更スクリプトや拡張機能と重複して有効化しないでください。
+※ 更新時はフォルダー全体を上書きし、`edge://extensions` で対象拡張の再読み込みボタンを押し、Disney+のタブも再読み込みしてください。
 
-ユーザースクリプト版は `DisneyPlus-Edge-Enhanced.user.js` です。ページ本体の実行領域への `document-start` 注入に対応する管理拡張が必要です。専用のツールバーボタンはないため、`Alt+Shift+4` でデバッグUIを開いてモードを選びます。今回の実再生記録は展開したMV3拡張によるもので、各スクリプト管理拡張との互換性は未検証です。
+## 使い方
 
-## 普段の操作
+- **アイコン左クリック**: フルHD要求のON/OFFを切り替え、対象タブを再読み込みします。
+- **アイコン右クリック**: 「4Kを開始（Intel GPU向け・このページのみ）」または「デバッグUIを表示／非表示」を選択できます（デバッグUIの開閉は `Alt+Shift+4` でも可能）。
+- **4Kモードの挙動**: 4K要求はそのページ限り有効で、再読み込み後はOFFに戻ります。WebGLによるGPU判定を行いますが、物理的な出力経路を保証するものではありません。
 
-1. Disney+タブで拡張アイコンをクリックすると、フルHD要求を **ON** にして、そのタブだけ再読み込みします。作品の再生操作はDisney+側で行います。
-2. もう一度クリックすると **OFF（無変更）** に戻して、そのタブだけ再読み込みします。拡張自身がEdgeを再起動したり、他のタブを再読み込みしたりすることはありません。
-3. 調べたいときだけ、アイコンを右クリックして **「デバッグUIを表示／非表示」** を選びます。通常は再読み込みも再生モードの変更もしません。既存ページに新版本体が未注入の場合だけ、読み込みのため一度再読み込みします。
-
-右クリック単独でページUIを開くのではなく、Edge標準の右クリックメニューに項目を追加する方式です。`Alt+Shift+4` でも開閉でき、パネルの「閉じる」で隠せます。デバッグUIの表示状態はタブのsessionStorageに保持します。
-
-| バッジ | 意味 |
+| バッジ | 状態 |
 | --- | --- |
-| OFF | 再生設定は無変更 |
-| HD | 通常フルHD要求がON。**実際に1080pで再生できている証拠ではありません** |
-| 4K | 「4K HDR10（SDKのPlayReady選択）」がON。実解像度・HDR表示の証明ではない。クリックでOFF |
-| DBG | デバッグUIで選んだ別の要求・診断モード |
-| ! | 操作または再生のエラー。右クリックからデバッグUIを確認 |
+| OFF | 通常再生（無変更） |
+| HD | フルHD要求中（実画質の保証ではありません） |
+| 4K | Intel向け4K要求中（このページ限りで有効） |
+| DBG | デバッグUIで設定した診断モード |
+| ! | エラー発生（デバッグUIを確認） |
 
-ON/OFFはDisney+のlocalStorageに保存し、次回開くDisney+ページでも使います。同じoriginのタブ間で共有される設定ですが、既に再生中の他タブのモードを即座に切り替えるものではありません。
+ツールバーのバッジは要求モードを示すもので、実際の再生画質ではありません。動画の実寸法、再生時間、フレーム進行をデバッグUIで確認してください。
 
-通常フルHDは、既存の1920×1080・SDR・HEVC/AAC候補を1本選びます。**再生時間で停止せず、SDKセッション作成・再生要求・master再取得・正規の鍵更新を1回で打ち切りません。** 拡張自身が自動再生やエラー時の再試行を行うものではなく、認証・ライセンス・回線・サービス側の問題までは解消しません。
+通常フルHDおよびIntel 4Kモードに短時間の強制終了タイマーはなく、自動再生やエラー時の自動再試行も行いません。診断用の時間制限モード等の詳細は [docs/diagnostics.md](docs/diagnostics.md) を参照してください。
 
-候補が見つからない、SDK構造が未対応、DRM/映像エラー、通信ガードの不成立などでは停止します。通常フルHDでこの停止が起きた場合は、保存設定もOFFへ戻し、次回読み込みで自動的に同じ処理を始めないようにします。OS全体がフリーズした場合は、この処理自体が実行できないことがあります。
+## デュアルGPU環境で外部モニターを使う場合
 
-## Intel GPUで4Kを選ぶ
+Edgeの描画GPUとモニターが接続されているGPUが異なると、出力保護エラーで再生に失敗する場合があります。検証機ではNVIDIA側の端子で再生に失敗し、同じモニターをIntel側の端子に差し替えることで成功しました。
 
-1. Edgeと画面がIntel側を使う構成で、アイコンを右クリック → **「4Kを開始（Intel GPU向け・このページのみ）」** を選びます。外部モニターは[接続先GPUも確認](#デュアルgpu機で外部モニターを使う場合)してください。内蔵画面の成功時はG-HelperのGPUモード「標準」でしたが、特定の性能モードが必須と確認したわけではありません。
-2. WebGLの参考判定がIntelの場合に、そのタブを再読み込みして **「4K HDR10（SDKのPlayReady選択）」** を開始します。GPU判定は再読み込み後にも確認します。拡張が再生ボタンを押したり、Windows/MUX/HDR設定を切り替えたりすることはありません。
-3. 720p/1080pから4Kへ上がることがあります。バッジではなく、デバッグUIの実寸法・時間とフレーム進行で確認してください。30秒停止や2回目の鍵要求で打ち切るモードではありません。
-4. アイコンをクリックするとOFFになります。4Kは保存された常時ON設定にはせず、再読み込み・再起動後は無変更に戻ります。もう一度使うときは右クリックから選び直します。通常の左クリックによるONは引き続きフルHDです。
+1. Windowsの「設定 > システム > ディスプレイ > グラフィック」で、Edgeの優先GPUを **Intel内蔵GPU** に指定し、Edgeを再起動する。
+2. 「ディスプレイの詳細設定」で、対象モニターの接続先がIntelになっているか確認する。dGPUになっている場合は、Intel側に配線されている端子に接続し直す（USB-C、HDMI、Thunderboltといった規格名だけでは内部の配線先は判別できません）。
+3. HDR表示を行う場合は、対象モニターのWindows HDRをあらかじめオンにする（拡張が自動で設定を変更することはありません）。
 
-**メニュー項目自体は表示されますが、NVIDIA/AMD/ソフトウェア描画/判定不能の場合、その項目から4Kは開始しません。** 理由をデバッグUIに表示し、再生中の設定やタブは変更しません。更新直後に旧スクリプトが残っている場合も開始せず、拡張とDisney+タブの再読み込みが必要です。
+## 開発
 
-WebGLのGPU名は、保護映像を復号するGPUや物理出力先の証明ではありません。ハイブリッド機では異なる可能性があり、Intel表示でも成功保証ではなく、逆に使える構成で判定できない場合もあります。Intel製の全世代・Arc等の全製品を検証済みとは扱いません。既存のデバッグ用4Kモードはそのまま残しており、新しいIntel判定は通常メニューからの開始に適用します。
+拡張機能を利用するだけならNode.jsは不要です。
 
-## デュアルGPU機で外部モニターを使う場合
+- 動作環境: Node.js 24以上
+- テスト実行: `npm test`
+- ビルド実行: `npm run build` / `npm run build:check`
 
-**「Edgeが使うGPU」と「モニターにつながるGPU」は別です。** WindowsでEdgeをIntel優先にしても、dGPU側の映像端子につないだモニターの出力元は変わらない場合があります。
+`src/` 配下のHLS選択・通信アダプターを変更した場合は `npm run build` で埋め込みコードを再生成します。それ以外の本体の修正は `extension/DisneyPlus-Edge-Enhanced.user.js` を直接編集します。
 
-1. Windowsの「設定 → システム → ディスプレイ → グラフィック」で、Edgeを **Intel内蔵GPU（省電力）** に指定し、Edgeを再起動します。
-2. 「ディスプレイの詳細設定」で、対象モニターの接続先がIntelか確認します。NVIDIA / AMDにつながっている場合は、PCの仕様を確認し、**Intel側に接続された別の映像端子**を使ってください。USB-CやHDMIという形状だけでは判断できず、対応する端子・配線は機種ごとに異なります。
-3. HDR対応モニターでHDR表示を使う場合は、WindowsのHDRをオンにしてから、拡張のIntel向け4Kモードを選びます。モード名やバッジだけでなく、実寸法とフレーム進行を確認してください。
+## 不具合報告・ライセンス
 
-実測したROG Flow Z13 GZ301VVでは、**XG Mobile横のUSB-CはNVIDIA出力で失敗 → もう一方のThunderbolt 4端子はIntel出力で成功**しました。外部モニターは同じMPG 491C OLEDで、SDR・HDRオンの両方で5分以上の4K再生を確認しています。これはこの機種・構成での結果であり、「Thunderboltなら必ずIntel」という意味ではありません。[端子変更前後の実測](docs/intel-4k.md#外部モニターでの4kとhdr)
+不具合を報告する際は、OS、Edge、GPU、ドライバーの各バージョン、使用したモード、動画の実寸法、フレーム進行、エラー内容を記載してください。
 
-## デバッグ・再生の確認
+> [!IMPORTANT]
+> 公開IssueにHAR、Cookie、認証情報、完全なmanifest、ライセンス応答、メモリダンプ等を絶対に貼り付けないでください。
 
-- `1920×1080`という宣言だけでなく、動画の実寸法・時間とフレーム数の増加を確認します。`edge://media-internals`でも接続CDM・解像度・codecを確認できます。
-- 「環境チェック」のEME API受付はCDMの実使用を示しません。「接続CDM / 鍵」と実フレームを確認します。
-- 「診断をコピー」は手動操作時だけクリップボードへ書き込みます。
-- 旧 **「1080p SDR・HEVC/AACを1候補に固定（75秒比較）」** は短時間診断用として残しています。こちらはSDK開始から75秒で予定停止し、次の再読み込みで自動再開しません。普段の視聴では「フルHD（1080p SDR・時間制限なし）」を使います。
-- 4K HDR単一候補の30秒制限など、危険な比較モードの制限は変更していません。
+- ライセンス: [MIT License](LICENSE)
+- サードパーティ表記: [NOTICE.md](NOTICE.md)
+- プライバシーポリシー: [PRIVACY.md](PRIVACY.md)
+- 関連ドキュメント: [docs/intel-4k.md](docs/intel-4k.md) / [docs/diagnostics.md](docs/diagnostics.md) / [docs/related-issues.md](docs/related-issues.md)
 
-時間制限の撤去と実機での安定性は別です。Intelでの5分試験は初期の複数ライセンス処理を含みますが、後の時間経過による鍵切替、作品全編、シーク・吹替変更、別作品やGPUでの継続再生は引き続き検証が必要です。
+## English Summary
 
-## 開発・テスト
-
-Node.js 24以上を使います。拡張を利用するだけならNode.jsは不要です。npm依存パッケージのインストールも不要です。
-
-```sh
-npm test
-npm run build
-npm run build:check
-```
-
-`extension/DisneyPlus-Edge-Enhanced.user.js`が配布する本体です。`src/`のHLS選択・通信アダプターを編集した場合は `npm run build` で本体の埋め込み部分を更新します。それ以外の本体は同ファイルを直接編集します。
-
-テストはNode VM上のfetch/XHR・SDK・EMEモックで実行し、実ネットワーク呼出しを検出するガードを読み込みます。ブラウザー・アカウント・本物のCDMは使いません。オフラインテストの成功を、実機での画質・安定性の証拠にはしません。
-
-Windowsで配布ZIPを作る場合:
-
-```powershell
-powershell -NoProfile -File scripts/package.ps1
-```
-
-テスト後、明示したファイルだけを `dist/` に出力します。同じ版のZIPが既にある場合は上書きせず停止します。
-
-## 報告・ライセンス
-
-不具合報告には、Windows/Edge/GPU/ドライバーの版、選んだモード、前提設定、実寸法とフレーム進行、エラーの有無を添えてください。**HAR、Cookie、認証ヘッダー、完全なmanifestやライセンス応答、メモリダンプを公開Issueに貼らないでください。** コピーした診断も投稿前に確認してください。
-
-[MIT License](LICENSE)。参考資料と第三者の権利については[NOTICE](NOTICE.md)を参照してください。
-
-## English summary
-
-Windows Edge extension with a one-click full-HD request toggle. Right-click its toolbar icon and choose the debug UI item for diagnostics; the page overlay is hidden by default. v0.4.0 adds a normal full-HD mode without the old 75-second duration or one-SDK/POST/master limits. The HD badge indicates the requested mode, not verified picture quality. Native errors still stop the mode and reset the saved preference to OFF.
-
-**User-facing guidance: Intel integrated graphics can use 4K HDR in the tested configuration; NVIDIA/AMD discrete GPUs are limited to the full-HD SDR mode in this project's guidance.** This is not a hardware capability limit or a guarantee that every dGPU can play 1080p. Intel validation covers Iris Xe, not every Intel generation or Arc GPU.
-
-On September 12, the same laptop played 3840×2160 on an external MPG 491C OLED for **301.03 seconds with SDR output and 307.72 seconds with HDR output**, using regular Edge 153.0.4234.32 and the existing v0.3.16 HDR10 SDK PlayReady mode. The HDR run advanced 7,393 frames with zero drops, while display diagnostics confirmed RGB 10-bit HDR at 5120×1440/144Hz and Intel VideoDecode activity. Three initial persistent-license sessions succeeded. The earlier internal-display SDR run lasted 313.74 seconds. These are source-playback measurements, not native 4K panel output or HDR color/luminance calibration. [Recorded evidence](docs/intel-4k.md).
-
-**On dual-GPU laptops, check the monitor's physical output port as well as Edge's GPU preference.** In this test, selecting Intel for Edge while the monitor remained on the NVIDIA-connected port still failed with an output-protection error. Moving the same monitor cable to the Intel-connected port enabled playback. Port routing is model-specific; USB-C/HDMI/Thunderbolt labels alone do not identify the GPU. These results do not prove a vendor-wide defect or identify the cause of the separate AMD freezes.
-
-v0.5.0 adds a right-click **Intel 4K** entry for that existing mode, with no 30-second playback cap. It checks a WebGL GPU-vendor hint at selection and after reload, refuses non-Intel/unknown results, and remains opt-in for one page. WebGL cannot certify the protected-video/output route. New UI hardware validation, later timed key rotation and full-title playback remain unverified. The separate diagnostic modes retain their 75-second FHD and 30-second HDR limits.
-
-**Hardware PlayReady / 4K HDR tests have frozen the entire PC or caused a BSOD. Software timers cannot prevent OS/GPU hangs.** This is not a DRM bypass, key extractor, or downloader. Keep legitimate subscription and playback permissions. Prerequisites used in the comparison were PlayReady enabled, Widevine disabled, hardware acceleration enabled, HEVC available, and a full Edge restart; restore changed flags afterward. Load the entire `extension` directory unpacked, pin its icon, and start in OFF. MIT licensed; no affiliation with Disney or Microsoft.
+An unofficial Microsoft Edge extension to toggle Full HD and Intel-targeted 4K playback requests on Disney+.
+Intel integrated GPUs support 4K HDR under tested conditions (verified on Iris Xe for ~5 minutes), while NVIDIA and AMD dGPUs are limited to 1080p SDR in this extension's guidance.
+AMD systems may experience OS freezes or BSODs with 4K/HDR; software timers cannot prevent hardware or driver hangs.
+This extension does not bypass DRM, extract keys, or download streams; a legitimate subscription and supported hardware configuration are required.
