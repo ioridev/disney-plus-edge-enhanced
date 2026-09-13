@@ -1,92 +1,87 @@
 # Disney+ Edge Enhanced
 
-| GPU・接続構成 | 利用できる画質 | 外部モニター利用時 |
-| --- | --- | --- |
-| Intel内蔵GPU（処理・出力） | 4K HDR | Intel側につながる映像端子を使用 |
-| NVIDIA / AMD dGPU | フルHD（1080p SDR）まで | 4K/HDRは本拡張では非推奨 |
-| デュアルGPU（Intel + dGPU） | モニターの接続先GPUによる | 端子の物理接続先もIntelか確認 |
+English | [日本語](README.ja.md)
 
-![Disney+ Edge Enhanced — フルHD・Intel向け4K（実験版）の非公式Edge拡張](docs/assets/readme-banner.png)
+| GPU & Connection Setup | Available Quality | When Using External Monitor |
+| --- | --- | --- |
+| Intel Integrated GPU (Render & Output) | 4K HDR | Use display port wired to Intel |
+| NVIDIA / AMD dGPU | Up to Full HD (1080p SDR) | 4K/HDR is not recommended in this extension |
+| Dual GPU (Intel + dGPU) | Depends on connected GPU | Verify physical port is wired to Intel |
+
+![Disney+ Edge Enhanced — Unofficial Edge extension for Full HD and Intel 4K (experimental)](docs/assets/readme-banner.png)
 
 > [!WARNING]
-> **AMD環境での4K/HDR（1080p HDR含む）再生時にフリーズやBSODが発生しています。**
-> dGPUではSDR（フルHDまで）を使用し、一度フリーズした条件は繰り返さないでください。拡張のタイマー等でOSやドライバーの停止を防ぐことはできません。
+> **Freezes and BSODs have occurred during 4K/HDR playback (including 1080p HDR) on AMD configurations.**
+> Use SDR (up to Full HD) on dGPUs, and do not repeat configurations that caused a freeze. Software timers in the extension cannot prevent OS or driver crashes.
 
-Windows版Microsoft EdgeでDisney+の画質要求（フルHD / Intel向け4K）を切り替える非公式拡張機能です。DRM解除、鍵抽出、ライセンス偽造、HDCP偽装、動画ダウンロード等の機能はありません。正規の契約とログインが必要です。
+An unofficial extension for Microsoft Edge on Windows that toggles Disney+ stream quality requests (Full HD / 4K for Intel). It does not include features such as DRM removal, key extraction, license spoofing, HDCP spoofing, or video downloading. A valid subscription and login are required.
 
-検証機のIntel Iris Xe構成では約5分間の4K HDR再生を確認していますが、全Intel製品や全dGPUでの動作を保証するものではありません。dGPUの上限はGPU自体の性能限界ではなく本拡張の対応範囲です。詳細な数値や未確認項目の検証履歴は [docs/intel-4k.md](docs/intel-4k.md)、[docs/diagnostics.md](docs/diagnostics.md)、[docs/related-issues.md](docs/related-issues.md) を参照してください。
+Approximately 5 minutes of continuous 4K HDR playback was verified on a test machine with Intel Iris Xe, but operation is not guaranteed across all Intel products or all dGPUs. The limit for dGPUs reflects this extension's supported scope, not the hardware's inherent capability. For specific test measurements and validation history, see [docs/intel-4k.md](docs/intel-4k.md) (Japanese), [docs/diagnostics.md](docs/diagnostics.md) (Japanese), and [docs/related-issues.md](docs/related-issues.md) (Japanese).
 
-## 前提条件（Edgeの設定）
+## Prerequisites (Edge Settings)
 
-本拡張の動作条件を揃えるための設定です。Disney+公式の手順ではありません。フラグの有無はEdgeのバージョンで異なり、他サービスにも影響するため、元の値を控えて戻せるようにしてください。
+These settings align the environment with the extension's operating requirements. They are not official Disney+ instructions. The availability of flags varies by Edge version, and changing them affects other services; keep track of the original values so you can revert them.
 
-1. `edge://flags` で **PlayReady DRM** を **Enabled** に設定する。
-2. `edge://flags` で **Widevine DRM** を **Disabled** に設定する（他サービスへの影響に注意）。
-3. Edgeの設定「システムとパフォーマンス」で **グラフィックス／ハードウェアアクセラレーション** をオンにする。
-4. **Edge本体を再起動** する。
-5. Windowsで **HEVCビデオ拡張機能** が利用可能か確認する。
+1. Set **PlayReady DRM** to **Enabled** in `edge://flags`.
+2. Set **Widevine DRM** to **Disabled** in `edge://flags` (note the impact on other services).
+3. Turn on **Use graphics acceleration when available** (hardware acceleration) under Edge Settings > "System and performance".
+4. **Restart Edge**.
+5. Verify that the **HEVC Video Extensions** are available on Windows.
 
-## インストール・更新
+## Installation & Updates
 
-1. [Releases](https://github.com/ioridev/disney-plus-edge-enhanced/releases) またはソースZIPをダウンロードして展開する。
-2. Edgeで `edge://extensions` を開き、**開発者モード** をオンにする。
-3. **展開して読み込み** から、展開先の `extension` フォルダー（`manifest.json` がある場所）を選択する。
-4. ツールバーに拡張機能をピン留めし、Disney+のページを再読み込みする。
+1. Download and extract the package from [Releases](https://github.com/ioridev/disney-plus-edge-enhanced/releases) or the source ZIP.
+2. Open `edge://extensions` in Edge and enable **Developer mode**.
+3. Click **Load unpacked** and select the extracted `extension` directory (the folder containing `manifest.json`).
+4. Pin the extension to the toolbar, then reload the Disney+ page.
 
-※ 他の画質変更スクリプトや拡張機能と重複して有効化しないでください。
-※ 更新時はフォルダー全体を上書きし、`edge://extensions` で対象拡張の再読み込みボタンを押し、Disney+のタブも再読み込みしてください。
+* Do not run this concurrently with other video quality scripts or extensions.
+* When updating, overwrite the entire directory, click the reload button for this extension on `edge://extensions`, and reload the Disney+ tab.
 
-## 使い方
+## Usage
 
-- **アイコン左クリック**: フルHD要求のON/OFFを切り替え、対象タブを再読み込みします。
-- **アイコン右クリック**: 「4Kを開始（Intel GPU向け・このページのみ）」または「デバッグUIを表示／非表示」を選択できます（デバッグUIの開閉は `Alt+Shift+4` でも可能）。
-- **4Kモードの挙動**: 4K要求はそのページ限り有効で、再読み込み後はOFFに戻ります。WebGLによるGPU判定を行いますが、物理的な出力経路を保証するものではありません。
+- **Left-click icon**: Toggles the Full HD request ON/OFF and reloads the active tab.
+- **Right-click icon**: Select "Start 4K (for Intel GPUs, this page only)" or "Toggle Debug UI" (menu labels are currently in Japanese; `Alt+Shift+4` can also toggle the debug UI).
+- **4K mode behavior**: The 4K request is active for the current page only and reverts to OFF upon reload. The extension uses WebGL to detect the GPU, but this does not guarantee physical video output routing.
 
-| バッジ | 状態 |
+| Badge | State |
 | --- | --- |
-| OFF | 通常再生（無変更） |
-| HD | フルHD要求中（実画質の保証ではありません） |
-| 4K | Intel向け4K要求中（このページ限りで有効） |
-| DBG | デバッグUIで設定した診断モード |
-| ! | エラー発生（デバッグUIを確認） |
+| OFF | Normal playback (unmodified) |
+| HD | Requesting Full HD (does not guarantee actual playback resolution) |
+| 4K | Requesting Intel 4K (active for this page only) |
+| DBG | Diagnostic mode set via the debug UI |
+| ! | Error occurred (check the debug UI) |
 
-ツールバーのバッジは要求モードを示すもので、実際の再生画質ではありません。動画の実寸法、再生時間、フレーム進行をデバッグUIで確認してください。
+The toolbar badge indicates the requested mode, not the actual playback quality. Check actual video dimensions, playback duration, and frame progress in the debug UI.
 
-通常フルHDおよびIntel 4Kモードに短時間の強制終了タイマーはなく、自動再生やエラー時の自動再試行も行いません。診断用の時間制限モード等の詳細は [docs/diagnostics.md](docs/diagnostics.md) を参照してください。
+Standard Full HD and Intel 4K modes do not have short timeout shutdown timers, nor do they perform automatic playback or automatic retry on errors. For details on diagnostic time-limited modes, see [docs/diagnostics.md](docs/diagnostics.md) (Japanese).
 
-## デュアルGPU環境で外部モニターを使う場合
+## Using an External Monitor in Dual-GPU Configurations
 
-Edgeの描画GPUとモニターが接続されているGPUが異なると、出力保護エラーで再生に失敗する場合があります。検証機ではNVIDIA側の端子で再生に失敗し、同じモニターをIntel側の端子に差し替えることで成功しました。
+If the GPU rendering Edge differs from the GPU connected to the monitor, playback may fail due to output protection errors. On the test machine, playback failed when connected via the NVIDIA port, but succeeded when switching the same monitor to a port wired to the Intel GPU.
 
-1. Windowsの「設定 > システム > ディスプレイ > グラフィック」で、Edgeの優先GPUを **Intel内蔵GPU** に指定し、Edgeを再起動する。
-2. 「ディスプレイの詳細設定」で、対象モニターの接続先がIntelになっているか確認する。dGPUになっている場合は、Intel側に配線されている端子に接続し直す（USB-C、HDMI、Thunderboltといった規格名だけでは内部の配線先は判別できません）。
-3. HDR表示を行う場合は、対象モニターのWindows HDRをあらかじめオンにする（拡張が自動で設定を変更することはありません）。
+1. In Windows "Settings > System > Display > Graphics", set Edge's preferred GPU to the **Intel integrated GPU**, then restart Edge.
+2. In "Advanced display settings", verify that the target monitor is connected to the Intel GPU. If it is connected to the dGPU, reconnect it to a port wired to Intel (connector types such as USB-C, HDMI, or Thunderbolt alone do not indicate internal routing, which is model-specific).
+3. For HDR display output, enable Windows HDR on the target monitor beforehand (the extension does not modify this setting automatically).
 
-## 開発
+## Development
 
-拡張機能を利用するだけならNode.jsは不要です。
+Node.js is not required if you are only using the extension.
 
-- 動作環境: Node.js 24以上
-- テスト実行: `npm test`
-- ビルド実行: `npm run build` / `npm run build:check`
+- Environment: Node.js 24 or later
+- Run tests: `npm test`
+- Build: `npm run build` / `npm run build:check`
 
-`src/` 配下のHLS選択・通信アダプターを変更した場合は `npm run build` で埋め込みコードを再生成します。それ以外の本体の修正は `extension/DisneyPlus-Edge-Enhanced.user.js` を直接編集します。
+If you modify the HLS selection or communication adapters under `src/`, run `npm run build` to regenerate the embedded code. For all other core modifications, edit `extension/DisneyPlus-Edge-Enhanced.user.js` directly.
 
-## 不具合報告・ライセンス
+## Issue Reporting & License
 
-不具合を報告する際は、OS、Edge、GPU、ドライバーの各バージョン、使用したモード、動画の実寸法、フレーム進行、エラー内容を記載してください。
+When reporting an issue, please include the versions of your OS, Edge, GPU, and graphics driver, along with the mode used, actual video dimensions, frame progress, and error details.
 
 > [!IMPORTANT]
-> 公開IssueにHAR、Cookie、認証情報、完全なmanifest、ライセンス応答、メモリダンプ等を絶対に貼り付けないでください。
+> Never post HAR files, cookies, credentials, full manifests, license responses, memory dumps, or other private raw logs to public issues.
 
-- ライセンス: [MIT License](LICENSE)
-- サードパーティ表記: [NOTICE.md](NOTICE.md)
-- プライバシーポリシー: [PRIVACY.md](PRIVACY.md)
-- 関連ドキュメント: [docs/intel-4k.md](docs/intel-4k.md) / [docs/diagnostics.md](docs/diagnostics.md) / [docs/related-issues.md](docs/related-issues.md)
-
-## English Summary
-
-An unofficial Microsoft Edge extension to toggle Full HD and Intel-targeted 4K playback requests on Disney+.
-Intel integrated GPUs support 4K HDR under tested conditions (verified on Iris Xe for ~5 minutes), while NVIDIA and AMD dGPUs are limited to 1080p SDR in this extension's guidance.
-AMD systems may experience OS freezes or BSODs with 4K/HDR; software timers cannot prevent hardware or driver hangs.
-This extension does not bypass DRM, extract keys, or download streams; a legitimate subscription and supported hardware configuration are required.
+- License: [MIT License](LICENSE)
+- Third-party notices: [NOTICE.md](NOTICE.md)
+- Privacy Policy: [PRIVACY.md](PRIVACY.md)
+- Related documents: [docs/intel-4k.md](docs/intel-4k.md) (Japanese) / [docs/diagnostics.md](docs/diagnostics.md) (Japanese) / [docs/related-issues.md](docs/related-issues.md) (Japanese)
